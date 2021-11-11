@@ -8,9 +8,11 @@ in the research group REMI - Recoding Mechanisms in Infections.
 
 Supervisor - Jun. Prof. Neva Caliskan
 
-
+***copyright license***
 Attribution-NonCommercial-ShareAlike
+
 CC BY-NC-SA
+
 ![image](https://user-images.githubusercontent.com/59534208/141326328-f8ba55ef-3f27-43a0-ae4b-be74df46e57f.png)
 
 This license lets others remix, adapt, and build upon your work non-commercially, as long as they credit you and license their new creations under the identical terms.
