@@ -1,4 +1,5 @@
-""" POTATO -- 2021-10-14 -- Version 0.1
+""" Copyright 2021 Helmholtz-Zentrum für Infektionsforschung GmbH
+    POTATO -- 2021-10-14 -- Version 0.1
     Developed by Lukáš Pekárek and Stefan Buck at the Helmholtz Institute for RNA-based Infection Research
     In the research group REMI - Recoding Mechanisms in Infections
     Supervisor - Jun. Prof. Neva Caliskan """
