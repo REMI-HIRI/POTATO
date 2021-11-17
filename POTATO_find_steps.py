@@ -1,3 +1,4 @@
+"""Copyright 2021 Helmholtz-Zentrum für Infektionsforschung GmbH"""
 
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
