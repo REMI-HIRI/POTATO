@@ -1,3 +1,4 @@
+"""Copyright 2021 Helmholtz-Zentrum für Infektionsforschung GmbH"""
 """default values for each data type"""
 
 default_values_HF = {
