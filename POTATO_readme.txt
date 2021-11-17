@@ -1,3 +1,5 @@
+"""Copyright 2021 Helmholtz-Zentrum für Infektionsforschung GmbH"""
+
 *************** README - POTATO ***************
 This is the first version of POTATO and the pipeline is still in development.
 Therefore, there might be still some issues to be solved.
