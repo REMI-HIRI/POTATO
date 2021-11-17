@@ -1,3 +1,5 @@
+"""Copyright 2021 Helmholtz-Zentrum für Infektionsforschung GmbH"""
+
 import matplotlib.pyplot as plt
 import lumicks.pylake as lk
 import numpy as np
