@@ -1,3 +1,4 @@
+"""Copyright 2021 Helmholtz-Zentrum für Infektionsforschung GmbH"""
 
 from tkinter import filedialog
 import matplotlib.pyplot as plt
