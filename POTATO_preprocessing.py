@@ -1,3 +1,4 @@
+"""Copyright 2021 Helmholtz-Zentrum für Infektionsforschung GmbH"""
 
 from scipy import signal
 import numpy as np
