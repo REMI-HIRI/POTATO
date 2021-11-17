@@ -1,3 +1,4 @@
+"""Copyright 2021 Helmholtz-Zentrum für Infektionsforschung GmbH"""
 
 import pandas as pd
 import h5py
