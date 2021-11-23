@@ -1,0 +1,34 @@
+Data processing:
+{
+    "downsample_value": 30,
+    "filter_degree": 4,
+    "filter_cut_off": 0.005,
+    "F_min": 5.0,
+    "step_d": 10,
+    "z-score": 3.0,
+    "window_size": 800,
+    "data_frequency": 1000.0,
+    "STD_diff": 0.05
+}
+
+Fitting parameters:
+{
+    "WLC+WLC": 1,
+    "WLC+FJC": 0,
+    "lp_ds": 40.0,
+    "lp_ds_up": 80.0,
+    "lp_ds_low": 12.0,
+    "lc_ds": 1256.0,
+    "lp_ss": 1.0,
+    "lc_ss": 1.0,
+    "ds_stiff": 500.0,
+    "ds_stiff_up": 600.0,
+    "ds_stiff_low": 400.0,
+    "ss_stiff": 800.0,
+    "offset_f": 0.0,
+    "offset_f_up": 3.0,
+    "offset_f_low": -3.0,
+    "offset_d": 0.0,
+    "offset_d_up": 300.0,
+    "offset_d_low": -300.0
+}
