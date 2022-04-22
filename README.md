@@ -13,11 +13,13 @@ Supervisor - Jun. Prof. Neva Caliskan
 
 ***Description***
 
-This script processes Force-Distance Optical Tweezers data in an automated way, to find unfolding events.
+This script processes Force-Distance Optical Tweezers data in an automated way, to find unfolding events, 
+
+perform fitting of polymer models and calculate the work applied onto the structure.
 
 The script is developed to handle h5 raw data, produced by the C-Trap OT instrument from LUMICKS,
 
-as well as any other FD data prepared in a CSV file (2 columns: Force(pN) - Distance(um))
+as well as any other FD data prepared in a CSV file (2 columns: Force(pN) - Distance(um or nm))
 
 Furthermore the script can analyse single constant force markers.
 
