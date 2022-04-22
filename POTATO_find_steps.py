@@ -40,7 +40,7 @@ def moving_median(input_data, column_number, window_size):
 
 
 # sorting the data based on a x times STD threshold (normal distibuted noise vs extreme values from steps)
-def cut_off(input_array, column_number, mm, std, n_of_std):
+def cut_off(input_array, column_number, mm, std, z_score):
     # sort values - inside STD region, above STD region and below STD region
     F_values_inside = []
     PD_values_inside = []
@@ -60,17 +60,18 @@ def cut_off(input_array, column_number, mm, std, n_of_std):
 
     i = 0
     for n in range(0, len(input_array), 1):
-        if input_array[n, column_number] > mm[int(i)] + n_of_std * std:
+        if input_array[n, column_number] > mm[int(i)] + z_score * std:
             F_dt_above.append(input_array[n, 2])
             F_values_above.append(input_array[n, 0])
             PD_values_above.append(input_array[n, 1])
             PD_dt_above.append(input_array[n, 3])
 
-        elif input_array[n, column_number] < mm[int(i)] - n_of_std * std:
+        elif input_array[n, column_number] < mm[int(i)] - z_score * std:
             F_dt_below.append(input_array[n, 2])
             F_values_below.append(input_array[n, 0])
             PD_values_below.append(input_array[n, 1])
             PD_dt_below.append(input_array[n, 3])
+
         else:
             F_dt_inside.append(input_array[n, 2])
             F_values_inside.append(input_array[n, 0])
@@ -88,7 +89,7 @@ def cut_off(input_array, column_number, mm, std, n_of_std):
 
 
 # searching for minima in the force derivation to identify unfolding events
-def find_steps_F(input_settings, filename_i, Force_Distance, der_arr):
+def find_steps_F(input_settings, filename_i, Force_Distance, der_arr, orientation):
     global y_vector_F
     global F_mm2_STD2_positive
     global F_mm2_STD2_negative
@@ -98,7 +99,7 @@ def find_steps_F(input_settings, filename_i, Force_Distance, der_arr):
 
     STD_1 = STD(der_arr, 2)
     F_mm = moving_median(der_arr, 2, input_settings['window_size'])
-    Above, Inside, Below, inside_indices_F = cut_off(der_arr, 2, F_mm, STD_1, input_settings['z-score'])
+    Above, Inside, Below, inside_indices_F = cut_off(der_arr, 2, F_mm, STD_1, input_settings['z-score_f'])
 
     F_mm2_STD2_positive = []
     F_mm2_STD2_negative = []
@@ -107,7 +108,7 @@ def find_steps_F(input_settings, filename_i, Force_Distance, der_arr):
     while abs(STD_1 - STD(Inside, 2)) / STD_1 > input_settings['STD_diff']:
         F_mm = moving_median(Inside, 2, input_settings['window_size'])
         STD_1 = STD(Inside, 2)
-        Above, Inside, Below, inside_indices_F = cut_off(der_arr, 2, F_mm, STD_1, input_settings['z-score'])
+        Above, Inside, Below, inside_indices_F = cut_off(der_arr, 2, F_mm, STD_1, input_settings['z-score_f'])
         n_runs = n_runs + 1
 
     if STD_1 < 0.05:
@@ -115,7 +116,7 @@ def find_steps_F(input_settings, filename_i, Force_Distance, der_arr):
 
     print('STD is', STD_1)
 
-    Above, Inside, Below, inside_indices_F = cut_off(der_arr, 2, F_mm, STD_1, input_settings['z-score'])
+    Above, Inside, Below, inside_indices_F = cut_off(der_arr, 2, F_mm, STD_1, input_settings['z-score_f'])
     F_mm = moving_median(Inside, 2, input_settings['window_size'])
 
     y_vector_F = []
@@ -129,8 +130,8 @@ def find_steps_F(input_settings, filename_i, Force_Distance, der_arr):
             F_mm.insert(n, F_mm[last])
 
     for i in range(len(F_mm)):
-        F_mm2_STD2_positive.append(F_mm[i] + input_settings['z-score'] * STD_1)
-        F_mm2_STD2_negative.append(F_mm[i] - input_settings['z-score'] * STD_1)
+        F_mm2_STD2_positive.append(F_mm[i] + input_settings['z-score_f'] * STD_1)
+        F_mm2_STD2_negative.append(F_mm[i] - input_settings['z-score_f'] * STD_1)
 
     # find the step points
     # for those steps that cross the STD2 threshold -> find the closest 0 values prior/following to the crossing one
@@ -158,6 +159,7 @@ def find_steps_F(input_settings, filename_i, Force_Distance, der_arr):
         PD_start_F.append(der_arr[i_start, 1])
         dict1 = {
             "filename": filename_i,
+            "orientation": orientation,
             "Derivation of": 'Force',
             'step #': n_steps,
             'F1': der_arr[i_start, 0],
@@ -176,7 +178,7 @@ def find_steps_F(input_settings, filename_i, Force_Distance, der_arr):
 
 
 # searching for maxima in the distance derivation to identify unfolding events
-def find_steps_PD(input_settings, filename_i, Force_Distance, der_arr):
+def find_steps_PD(input_settings, filename_i, Force_Distance, der_arr, orientation):
     global y_vector_PD
     global PD_mm2_STD2_positive
     global PD_mm2_STD2_negative
@@ -187,7 +189,7 @@ def find_steps_PD(input_settings, filename_i, Force_Distance, der_arr):
     STD_1 = STD(der_arr, 3)
     PD_mm = moving_median(der_arr, 3, input_settings['window_size'])
 
-    Above, Inside, Below, inside_indices_PD = cut_off(der_arr, 3, PD_mm, STD_1, input_settings['z-score'])
+    Above, Inside, Below, inside_indices_PD = cut_off(der_arr, 3, PD_mm, STD_1, input_settings['z-score_d'])
 
     PD_mm2_STD2_positive = []
     PD_mm2_STD2_negative = []
@@ -196,7 +198,7 @@ def find_steps_PD(input_settings, filename_i, Force_Distance, der_arr):
     while abs(STD_1 - STD(Inside, 3)) / STD_1 > input_settings['STD_diff']:
         PD_mm = moving_median(Inside, 3, input_settings['window_size'])
         STD_1 = STD(Inside, 3)
-        Above, Inside, Below, inside_indices_PD = cut_off(der_arr, 3, PD_mm, STD_1, input_settings['z-score'])
+        Above, Inside, Below, inside_indices_PD = cut_off(der_arr, 3, PD_mm, STD_1, input_settings['z-score_d'])
         n_runs = n_runs + 1
 
     if STD_1 < 0.05:
@@ -204,7 +206,7 @@ def find_steps_PD(input_settings, filename_i, Force_Distance, der_arr):
 
     print('STD is', STD_1)
 
-    Above, Inside, Below, inside_indices_PD = cut_off(der_arr, 3, PD_mm, STD_1, input_settings['z-score'])
+    Above, Inside, Below, inside_indices_PD = cut_off(der_arr, 3, PD_mm, STD_1, input_settings['z-score_d'])
     PD_mm = moving_median(Inside, 3, input_settings['window_size'])
 
     y_vector_PD = []
@@ -218,12 +220,10 @@ def find_steps_PD(input_settings, filename_i, Force_Distance, der_arr):
             PD_mm.insert(n, PD_mm[last])
 
     for i in range(len(PD_mm)):
-        PD_mm2_STD2_positive.append(PD_mm[i] + input_settings['z-score'] * STD_1)
-        PD_mm2_STD2_negative.append(PD_mm[i] - input_settings['z-score'] * STD_1)
+        PD_mm2_STD2_positive.append(PD_mm[i] + input_settings['z-score_d'] * STD_1)
+        PD_mm2_STD2_negative.append(PD_mm[i] - input_settings['z-score_d'] * STD_1)
     # find the step points
     # for those steps that cross the 3*STD2 threshold -> find the closest 0 values prior/following to the crossing one
-
-    # for local minima
 
     loc_max = argrelextrema(Above[:, 3], np.greater)
 
@@ -249,6 +249,7 @@ def find_steps_PD(input_settings, filename_i, Force_Distance, der_arr):
 
         dict1 = {
             "filename": filename_i,
+            "orientation": orientation,
             "Derivation of": 'Distance',
             'step #': n_steps,
             'F1': der_arr[i_start, 0],

@@ -1,4 +1,5 @@
 """Copyright 2021 Helmholtz-Zentrum für Infektionsforschung GmbH"""
+
 """default values for each data type"""
 
 default_values_HF = {
@@ -6,7 +7,8 @@ default_values_HF = {
     'Butterworth filter degree': '4',
     'Cut-off frequency': '0.005',
     'Force threshold, pN': '5',
-    'Z-score': '3',
+    'Z-score force': '3',
+    'Z-score distance': '3',
     'Step d': '10',
     'Moving median window size': '800',
     'STD difference threshold': '0.05',
@@ -18,7 +20,8 @@ default_values_LF = {
     'Butterworth filter degree': '2',
     'Cut-off frequency': '0.5',
     'Force threshold, pN': '5',
-    'Z-score': '3',
+    'Z-score force': '3',
+    'Z-score distance': '3',
     'Step d': '3',
     'Moving median window size': '20',
     'STD difference threshold': '0.05',
@@ -26,15 +29,16 @@ default_values_LF = {
 }
 
 default_values_CSV = {
-    'Downsampling rate': '2',
-    'Butterworth filter degree': '4',
-    'Cut-off frequency': '0.005',
+    'Downsampling rate': '1',
+    'Butterworth filter degree': '1',
+    'Cut-off frequency': '0.01',
     'Force threshold, pN': '5',
-    'Z-score': '3',
+    'Z-score force': '2.5',
+    'Z-score distance': '3',
     'Step d': '10',
-    'Moving median window size': '250',
+    'Moving median window size': '120',
     'STD difference threshold': '0.05',
-    'Data frequency, Hz': '1000'
+    'Data frequency, Hz': '20'
 }
 
 default_values_FIT = {
@@ -42,10 +46,10 @@ default_values_FIT = {
     'Persistance-Length ds, upper bound, nm': '80',
     'Persistance-Length ds, lower bound, nm': '12',
     'Persistance-Length ss, nm': '1',
-    'Contour-Length ds, nm': '1256',
+    'Contour-Length ds, nm': '830',
     'Contour-Length ss, nm': '0',
     'Stiffness ds, pN': '500',
-    'Stiffness ds, upper bound, pN': '600',
+    'Stiffness ds, upper bound, pN': '1500',
     'Stiffness ds, lower bound, pN': '400',
     'Stiffness ss, pN': '800',
     'Force offset, pN': '0',

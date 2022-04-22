@@ -10,18 +10,33 @@ from matplotlib.lines import Line2D
 """define the functions used for fitting"""
 
 
-def fitting_ds(filename_i, input_settings, export_data, input_fitting, i_start, Force_Distance, derivation_array, F_low):
+def fitting_ds(filename_i, input_settings, export_data, input_fitting, i_start, Force_Distance, derivation_array, F_low, TOMATO_param):
     global model_ds, fit_ds
     global ds_fit_dict
     global f_fitting_region_ds, d_fitting_region_ds
     global export_fit_ds
     global fitting_model
 
-    start_step1 = np.where(derivation_array[:, 1] == i_start)
-    start_step1 = start_step1[0][0]
+    if TOMATO_param == 0:
+        start_step1 = np.where(derivation_array[:, 1] == i_start)
+        start_step1 = start_step1[0][0]
 
-    f_fitting_region_ds = Force_Distance[0:start_step1 * input_settings['step_d'] + len(F_low), 0]
-    d_fitting_region_ds = Force_Distance[0:start_step1 * input_settings['step_d'] + len(F_low), 1]
+        f_fitting_region_ds = Force_Distance[0:start_step1 * input_settings['step_d'] + len(F_low), 0]
+        d_fitting_region_ds = Force_Distance[0:start_step1 * input_settings['step_d'] + len(F_low), 1]
+
+    elif TOMATO_param == 1:
+        i_start = Force_Distance[-1, 1]
+        f_fitting_region_ds = Force_Distance[0]
+        d_fitting_region_ds = Force_Distance[1]
+
+    delta_f = f_fitting_region_ds[-1] - f_fitting_region_ds[0]
+    delta_d = d_fitting_region_ds[-1] - d_fitting_region_ds[0]
+    d_f_ratio = delta_d / delta_f
+
+    # downsample the data used for fitting with a dD/dF ratio
+    while len(f_fitting_region_ds) > 100 * d_f_ratio:
+        f_fitting_region_ds = f_fitting_region_ds[::2]
+        d_fitting_region_ds = d_fitting_region_ds[::2]
 
     model_ds = lk.inverted_odijk("ds_part").subtract_independent_offset() + lk.force_offset("ds_part")
 
@@ -63,7 +78,7 @@ def fitting_ds(filename_i, input_settings, export_data, input_fitting, i_start, 
     # calculate the integral until the first unfolding step
     # used to calculate the work done by the machine
     distance_integral = np.arange(min(Force_Distance[:, 1]), i_start)
-    ds_integral = model_ds(distance_integral, fit_ds)
+    ds_integral = model_ds(distance_integral, fit_ds.params)
     area_ds = simps(ds_integral)
     print("area_ds = " + str(area_ds))
 
@@ -71,6 +86,8 @@ def fitting_ds(filename_i, input_settings, export_data, input_fitting, i_start, 
     ds_fit_dict = {
         'filename': filename_i,
         'model': 'WLC',
+        'model_ds': model_ds,
+        'fit_model': fit_ds,
         'log_likelihood': fit_qual,
         'Lc_ds': fit_ds["ds_part/Lc"].value,
         'Lp_ds': fit_ds["ds_part/Lp"].value,
@@ -174,12 +191,12 @@ def fitting_ss(filename_i, input_settings, export_data, input_fitting, i_start, 
 
     # calculate the integrals of the fitted functions
     distance_integral_fit_start = np.arange(min(Force_Distance[:, 1]), i_start)
-    ss_integral_start = model_ss(distance_integral_fit_start, fit_ss)
+    ss_integral_start = model_ss(distance_integral_fit_start, fit_ss.params)
     area_ss_fit_start = simps(ss_integral_start)
     print("area_ss_start = " + str(area_ss_fit_start))
 
     distance_integral_fit_end = np.arange(min(Force_Distance[:, 1]), i_end)
-    ss_integral_end = model_ss(distance_integral_fit_end, fit_ss)
+    ss_integral_end = model_ss(distance_integral_fit_end, fit_ss.params)
     area_ss_fit_end = simps(ss_integral_end)
     print("area_ss_end = " + str(area_ss_fit_end))
 
@@ -210,7 +227,7 @@ def fitting_ss(filename_i, input_settings, export_data, input_fitting, i_start, 
 
 def plot_fit(fit, start_force_ss, start_distance_ss, Force_Distance, save_folder, filename_i, start_time):
     distance = np.arange(min(Force_Distance[:, 1]), max(Force_Distance[:, 1]) + 50, 2)
-    F_ds_model = model_ds(distance, fit_ds)
+    F_ds_model = model_ds(distance, fit_ds.params)
 
     legend_elements = [
         Line2D([0], [0], color='k', lw=1, alpha=0.85),
@@ -226,7 +243,7 @@ def plot_fit(fit, start_force_ss, start_distance_ss, Force_Distance, save_folder
     plt.legend(legend_elements, ['FD-Curve', 'Part used for fitting', 'Fitted WLC model'])
 
     for i in range(0, len(fit)):
-        F_ss_model = model_ss(distance, fit[i])
+        F_ss_model = model_ss(distance, fit[i].params)
         plt.scatter(start_distance_ss[i], start_force_ss[i], s=4)
         plt.plot(distance, F_ss_model, linestyle='dashed', color='gray')
 

@@ -1,5 +1,3 @@
-"""Copyright 2021 Helmholtz-Zentrum für Infektionsforschung GmbH"""
-
 *************** README - POTATO ***************
 This is the first version of POTATO and the pipeline is still in development.
 Therefore, there might be still some issues to be solved.
@@ -61,6 +59,9 @@ For each analysis step, buttons are displayed in the different tabs and some of 
 3) CSV (F/D)
       Analyses all csv files in a given directory.
       The architecture of these files need to consist out of two columns (Force and Distance) without headers.
+      Force needs to be in pN. Distance can be either be in µm or nm.
+      The script can process forward (unfolding) as well as reverse (folding) curves. If the script should distinguish,
+      the reverse curves need to start with the highest distance and decrease from there.
       The data gathering frequency and all other parameters are derived from the user input in the GUI.
 
 **Parameters**
@@ -69,14 +70,15 @@ For each analysis step, buttons are displayed in the different tabs and some of 
 	Upon changing, each parameter needs to be validated with the <ENTER> key.
 	When the parameters are optimized, default parameters can be changed in the POTATO_config file,
 	so they will be loaded when the GUI is started.
+  The parameters are read in once the analysis starts and for the force-ramp analysis the used parameters are exported in json format.
 
 **Output**
 	POTATO creates an "Analysis" folder with timestamp in the analysed directory.
-	The "Refresh" button loads the last saved image and gives a progress report.
+	The "Refresh" button loads the last saved image and displays the progress in the GUI.
 	In the "Advanced Settings" tab, several export settings can be set.
 
 1) Processed FD data:
-      Exports the down-sampled and filtered Force-Distance-Array in CSV format. 
+      Exports the down-sampled and filtered Force-Distance-Array in CSV format.
       The exported filename consists of the original filename and additional suffix "_smooth".
 2) Plot
       Exports a figure (PNG) containing - the visualized processed data with and without marked unfolding events
@@ -96,7 +98,7 @@ For each analysis step, buttons are displayed in the different tabs and some of 
 	Single FD-curves of all three input formats (h5-HF, h5-LF, CSV) can be displayed.
 
 **Output**
-	A FD-curve of the original input values, as well as the down sampled values are plotted in the GUI. This may help identify potential causes of errors. 
+	A FD-curve of the original input values, as well as the down sampled values are plotted in the GUI. This may help identify potential causes of errors.
 
 
 ***Constant Force Analysis***
@@ -119,8 +121,8 @@ For each analysis step, buttons are displayed in the different tabs and some of 
 
 
 ***Advanced Settings***
-	This tab contains all the adjustable parameters in the POTATO. 
-	The parameters are divided into several groups based on the part of analysis, in which they are used. 
+	This tab contains all the adjustable parameters in the POTATO.
+	The parameters are divided into several groups based on the part of analysis, in which they are used.
 **Preprocessing**
 	Downsample rate - Only every nth value is taken for analysis; speeds up subsequent processing.
 	Butterworth Filter degree - Defines the stringency of the filter.
@@ -134,18 +136,18 @@ For each analysis step, buttons are displayed in the different tabs and some of 
 	moving median window size - The number of values considered for each median calculation.
 	SD difference threshold - Statistical analysis and data sorting are iterated until the difference between two consecutive SDs is below this value.
 **Fitting**
-	"WLC+WLC" or "WLC+FJC" tick option - determines whether the unfolded regions of FD curves will be fitted with model combining two WLC models or WLC and FJC models, repectively. 
+	"WLC+WLC" or "WLC+FJC" tick option - determines whether the unfolded regions of FD curves will be fitted with model combining two WLC models or WLC and FJC models, repectively.
 	dsLp, nm - Persistence length of the double-stranded (folded) part of the tethered construct.
-	dsLc, nm - Contour length of double-stranded (folded) part of the tethered construct. 
+	dsLc, nm - Contour length of double-stranded (folded) part of the tethered construct.
 	dsK0, pN - Stretch modulus of double-stranded (folded) part of the tethered construct.
 	Force_offset, pN - Force offset of a given dataset; compensates for a shift in the dataset.
 	Distance_offset, nm - Distance offset of a given dataset; compensates for a shift in the dataset.
 	ssLp, nm - Persistence length of the single-stranded (unfolded) part of the tethered construct.
 	ssLc, nm - Contour length of single-stranded (unfolded) part of the tethered construct.
 	ssK0, pN - Stretch modulus of single-stranded (unfolded) part of the tethered construct.
-	
+
 **Export**
-	Consists of tick options for marking the data files to be exported (ticked) or not (unticked) during the analysis. 
+	Consists of tick options for marking the data files to be exported (ticked) or not (unticked) during the analysis.
 	Processed FD data 	- Exports the down-sampled and filtered Force-Distance-Array in CSV format.The exported filename consists of the original filename and additional suffix "_smooth".
 	Plot			- Exports a figure (PNG) containing - the visualized processed data with and without marked unfolding events
                                        		 		    - the corresponding force- and distance derivations
@@ -154,5 +156,3 @@ For each analysis step, buttons are displayed in the different tabs and some of 
 	Total results 		- Exports all steps from both derivations in CSV format.
 	Fitting 		- Exports a plot with the fitted models and a table of the fitting parameters for each section in CSV format.
      		  			When 'Fitting' is not selected, the script skips all fitting steps and therefore the analysis is much faster.
-
-
