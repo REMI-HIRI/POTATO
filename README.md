@@ -237,13 +237,13 @@ This tab allows user to perform manual analysis of the FD curves. TOMATO uses th
 1) Choose the folder containing the curves to analyse with the "Choose folder" button. Attention the file format and preprocessing values are set in the "Analysis folder" tab.
 	
 2) Manually mark the start and end of each (un)folding step: 
-	- press <s> or click on "Set start" button --> click on the position of start of a step
-	- press <e> or click on "Set end" button --> click on the position of end of the same step
-	- press <ctrl+s> or click on "Save step" button to save marked step coordinates
+	- press "s" or click on "Set start" button --> click on the position of start of a step
+	- press "e" or click on "Set end" button --> click on the position of end of the same step
+	- press "ctrl+s" or click on "Save step" button to save marked step coordinates
 	repeat until all steps are marked. Attention, the steps have to be marked in the correct order from the "lowest" to the "highest" step.
 	- if a mistake occurs during the marking, the last saved value can be removed by the "Delete step" button.
 3) Click on "Analyze curve" 
-	TOMATO proceeds with step coordinates input and performes the rest analysis as done by POTATO (fitting + work calculations). This may take some time during which the GUI is unresponsive. Optimize fitting parameters until a good fit is obtained. Entries of bad fits can be deleted in the "results table" by selecting them and pressing <Delete>
+	TOMATO proceeds with step coordinates input and performes the rest analysis as done by POTATO (fitting + work calculations). This may take some time during which the GUI is unresponsive. Optimize fitting parameters until a good fit is obtained. Entries of bad fits can be deleted in the "results table" by selecting them and pressing "Delete"
 	The relevant parameters are loaded into the table below the figure. The column width can be adjusted to see the parameter labels.
-4) Switch to the next curve of the folder with the arrow keys (left, right) or press <a> or <d>. The "step table" will be reseted. Analysis is performed as explained above and the parameters are added to the "results table". 
+4) Switch to the next curve of the folder with the arrow keys (left, right) or press "a" or "d". The "step table" will be reseted. Analysis is performed as explained above and the parameters are added to the "results table". 
 5) When all curves are manually analysed, the results table can be saved as csv file with the "Save results table" button.
