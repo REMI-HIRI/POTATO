@@ -42,13 +42,13 @@ def trim_data(FD_data, F_min):
     return F_trimmed, PD_trimmed, F_low
 
 
-# creates derivations for Force and Distance of the trimmed datasets
-def create_derivation(input_settings, Frequency_value, F_trimmed, PD_trimmed, F_low):
+# creates derivatives for Force and Distance of the trimmed datasets
+def create_derivative(input_settings, Frequency_value, F_trimmed, PD_trimmed, F_low):
     d_time = 1 / Frequency_value * input_settings['downsample_value'] * input_settings['step_d']
 
     x = input_settings['step_d']
 
-    derivation_list = []
+    derivative_list = []
 
     while x < len(F_trimmed):
         if PD_trimmed[0] < PD_trimmed[-1]:
@@ -66,9 +66,9 @@ def create_derivation(input_settings, Frequency_value, F_trimmed, PD_trimmed, F_
             F_dt = (delta_F / d_time) * (-1)
             PD_dt = (delta_PD / d_time) * (-1)
 
-        derivation_list.append([F_value, PD_value, F_dt, PD_dt])
+        derivative_list.append([F_value, PD_value, F_dt, PD_dt])
         x = x + input_settings['step_d']
 
-    derivation_array = np.array(derivation_list)
+    derivative_array = np.array(derivative_list)
 
-    return derivation_array
+    return derivative_array

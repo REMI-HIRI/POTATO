@@ -7,7 +7,7 @@ from pathlib import Path
 
 # relative imports
 from POTATO_fitting import fitting_ds, fitting_ss, plot_fit
-from POTATO_preprocessing import preprocess_RAW, trim_data, create_derivation
+from POTATO_preprocessing import preprocess_RAW, trim_data, create_derivative
 from POTATO_find_steps import find_steps_F, find_steps_PD, find_common_steps, calc_integral, save_figure
 from POTATO_processMultiH5 import split_H5
 
@@ -90,7 +90,7 @@ def start_subprocess(analysis_folder, timestamp, Files, input_settings, input_fo
             head = (
                 'filename',
                 'orientation',
-                'Derivation of',
+                'Derivative of',
                 'step number',
                 'F1',
                 'F2',
@@ -200,10 +200,10 @@ def start_subprocess(analysis_folder, timestamp, Files, input_settings, input_fo
             F_trimmed, PD_trimmed, F_low = trim_data(Force_Distance, input_settings['F_min'])
 
             if not F_trimmed.size == 0:
-                # create force and distance derivation of the pre-processed data to be able to identify steps
-                derivation_array = create_derivation(input_settings, Frequency_value, F_trimmed, PD_trimmed, F_low)
+                # create force and distance derivative of the pre-processed data to be able to identify steps
+                derivative_array = create_derivative(input_settings, Frequency_value, F_trimmed, PD_trimmed, F_low)
 
-                """find steps based on force derivation"""
+                """find steps based on force derivative"""
                 filename_results = analysis_folder + "/" + filename_i + "_results_" + timestamp + ".csv"
 
                 try:
@@ -211,7 +211,7 @@ def start_subprocess(analysis_folder, timestamp, Files, input_settings, input_fo
                         input_settings,
                         filename_i,
                         Force_Distance,
-                        derivation_array,
+                        derivative_array,
                         orientation
                     )
 
@@ -220,7 +220,7 @@ def start_subprocess(analysis_folder, timestamp, Files, input_settings, input_fo
                     if export_data['export_STEPS'] == 1:
                         steps_results_F = pd.DataFrame(results_F_list)
                         with open(filename_results, 'a+') as f:
-                            f.write('\nSteps found by force derivation:\n')
+                            f.write('\nSteps found by force derivative:\n')
                         steps_results_F.to_csv(filename_results, mode='a', index=False, header=True)
                     else:
                         pass
@@ -231,14 +231,14 @@ def start_subprocess(analysis_folder, timestamp, Files, input_settings, input_fo
                     print("Error in finding steps for file " + str(filename_i) + '\n' 'There was an error in finding Force steps')
                     pass
 
-                """find steps based on distance derivation"""
+                """find steps based on distance derivative"""
 
                 try:
                     results_PD, PD_start_PD = find_steps_PD(
                         input_settings,
                         filename_i,
                         Force_Distance,
-                        derivation_array,
+                        derivative_array,
                         orientation
                     )
 
@@ -247,7 +247,7 @@ def start_subprocess(analysis_folder, timestamp, Files, input_settings, input_fo
                     if export_data['export_STEPS'] == 1:
                         steps_results_PD = pd.DataFrame(results_PD_list)
                         with open(filename_results, 'a+') as f:
-                            f.write('\nSteps found by distance derivation:\n')
+                            f.write('\nSteps found by distance derivative:\n')
                         steps_results_PD.to_csv(filename_results, mode='a', index=False, header=True)
 
                 except:
@@ -257,26 +257,26 @@ def start_subprocess(analysis_folder, timestamp, Files, input_settings, input_fo
                     print(err_PD)
                     pass
 
-                # save plot with FD-curve, derivations and found steps
+                # save plot with FD-curve, derivatives and found steps
                 save_figure(
                     export_data['export_PLOT'],
                     timestamp,
                     filename_i,
                     analysis_folder,
                     Force_Distance,
-                    derivation_array,
+                    derivative_array,
                     F_trimmed,
                     PD_trimmed,
                     PD_start_F,
                     PD_start_PD
                 )
 
-                # when steps are found by force AND distance derivation, they are considered common steps
+                # when steps are found by force AND distance derivative, they are considered common steps
                 common_steps = []
                 try:
                     common_steps = find_common_steps(results_F_list, results_PD_list)
                     # to match with the fitting rows (always one more than steps) put a 'step 0' as first line
-                    common_steps_results = [{'filename': filename_i, 'orientation': orientation, 'Derivation of': '', 'step #': 0, 'F1': '', 'F2': '', 'Fc': '', 'step start': '', 'step end': '', 'step length': ''}]
+                    common_steps_results = [{'filename': filename_i, 'orientation': orientation, 'Derivative of': '', 'step #': 0, 'F1': '', 'F2': '', 'Fc': '', 'step start': '', 'step end': '', 'step length': ''}]
                 except:
                     err_FCS = str("Error in finding common steps" + str(filename_i) + '\n' 'There was an error in finding common steps')
                     output_q.put(err_FCS)
@@ -299,7 +299,7 @@ def start_subprocess(analysis_folder, timestamp, Files, input_settings, input_fo
                     total_results_steps = total_results_steps.append(common_steps_results, ignore_index=True, sort=False)
 
                 else:
-                    common_steps_results = [{'filename': filename_i, 'orientation': orientation, 'Derivation of': '', 'step #': 0, 'F1': '', 'F2': '', 'Fc': '', 'step start': '', 'step end': '', 'step length': ''}]
+                    common_steps_results = [{'filename': filename_i, 'orientation': orientation, 'Derivative of': '', 'step #': 0, 'F1': '', 'F2': '', 'Fc': '', 'step start': '', 'step end': '', 'step length': ''}]
                     total_results_steps = total_results_steps.append(common_steps_results, ignore_index=True, sort=False)
 
                 '''if common steps were found, try to fit FD-Curve'''
@@ -327,14 +327,14 @@ def start_subprocess(analysis_folder, timestamp, Files, input_settings, input_fo
                         # try to fit all parts of curve based on the common steps
                         try:
                             # fit part between start of the FD-cure up to the first common step
-                            export_fit_ds, area_ds = fitting_ds(
+                            export_fit_ds, area_ds, step_start = fitting_ds(
                                 filename_i,
                                 input_settings,
                                 export_data,
                                 input_fitting,
                                 float(common_steps[0]['step start']),
                                 Force_Distance,
-                                derivation_array,
+                                derivative_array,
                                 F_low,
                                 0
                             )
@@ -353,9 +353,12 @@ def start_subprocess(analysis_folder, timestamp, Files, input_settings, input_fo
                                             input_fitting,
                                             float(common_steps[n]['step end']),
                                             float(common_steps[n + 1]['step start']),
-                                            Force_Distance, 1, 1,
-                                            derivation_array,
-                                            F_low
+                                            Force_Distance,
+                                            1,
+                                            1,
+                                            derivative_array,
+                                            F_low,
+                                            0
                                         )
 
                                         fit.append(fit_ss)
@@ -377,10 +380,13 @@ def start_subprocess(analysis_folder, timestamp, Files, input_settings, input_fo
                                     export_data,
                                     input_fitting,
                                     float(common_steps[len(common_steps) - 1]['step end']),
-                                    max(derivation_array[:, 1]),
-                                    Force_Distance, 1, 1,
-                                    derivation_array,
-                                    F_low
+                                    max(derivative_array[:, 1]),
+                                    Force_Distance,
+                                    1,
+                                    1,
+                                    derivative_array,
+                                    F_low,
+                                    0
                                 )
 
                                 fit.append(fit_ss)
@@ -436,14 +442,14 @@ def start_subprocess(analysis_folder, timestamp, Files, input_settings, input_fo
                         # So in this case the fit will be performed for the whole curve from beginning to end.
                         except IndexError:
                             if not common_steps:
-                                export_fit_ds, area_ds = fitting_ds(
+                                export_fit_ds, area_ds, step_start = fitting_ds(
                                     filename_i,
                                     input_settings,
                                     export_data,
                                     input_fitting,
-                                    derivation_array[-1, 1],
+                                    derivative_array[-1, 1],
                                     Force_Distance,
-                                    derivation_array,
+                                    derivative_array,
                                     F_low,
                                     0
                                 )

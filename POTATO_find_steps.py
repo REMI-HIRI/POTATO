@@ -88,7 +88,7 @@ def cut_off(input_array, column_number, mm, std, z_score):
     return Above, Inside, Below, inside_indices
 
 
-# searching for minima in the force derivation to identify unfolding events
+# searching for minima in the force derivative to identify unfolding events
 def find_steps_F(input_settings, filename_i, Force_Distance, der_arr, orientation):
     global y_vector_F
     global F_mm2_STD2_positive
@@ -160,7 +160,7 @@ def find_steps_F(input_settings, filename_i, Force_Distance, der_arr, orientatio
         dict1 = {
             "filename": filename_i,
             "orientation": orientation,
-            "Derivation of": 'Force',
+            "Derivative of": 'Force',
             'step #': n_steps,
             'F1': der_arr[i_start, 0],
             'F2': der_arr[i_end, 0],
@@ -177,7 +177,7 @@ def find_steps_F(input_settings, filename_i, Force_Distance, der_arr, orientatio
     return results_F, PD_start_F
 
 
-# searching for maxima in the distance derivation to identify unfolding events
+# searching for maxima in the distance derivative to identify unfolding events
 def find_steps_PD(input_settings, filename_i, Force_Distance, der_arr, orientation):
     global y_vector_PD
     global PD_mm2_STD2_positive
@@ -250,7 +250,7 @@ def find_steps_PD(input_settings, filename_i, Force_Distance, der_arr, orientati
         dict1 = {
             "filename": filename_i,
             "orientation": orientation,
-            "Derivation of": 'Distance',
+            "Derivative of": 'Distance',
             'step #': n_steps,
             'F1': der_arr[i_start, 0],
             'F2': der_arr[i_end, 0],
@@ -267,7 +267,7 @@ def find_steps_PD(input_settings, filename_i, Force_Distance, der_arr, orientati
     return results_PD, PD_start_PD
 
 
-# define steps, that were found by Force- and Distance-derivation (used for fitting afterwards)
+# define steps, that were found by Force- and Distance-derivative (used for fitting afterwards)
 def find_common_steps(F_steps, PD_steps):
     common_steps = []
     x = 1
@@ -296,7 +296,7 @@ def calc_integral(area_1, area_2, step_start_d, step_end_d, step_start_f, step_e
     return work_step, work_in_kT
 
 
-def save_figure(export_PLOT, timestamp, filename_i, analysis_folder, Force_Distance, derivation_array, F_trimmed, PD_trimmed, PD_start_F, PD_start_PD):
+def save_figure(export_PLOT, timestamp, filename_i, analysis_folder, Force_Distance, derivative_array, F_trimmed, PD_trimmed, PD_start_F, PD_start_PD):
     figure1 = Figure(figsize=(10, 6), dpi=100)
     subplot1 = figure1.add_subplot(221)
     subplot2 = figure1.add_subplot(222)
@@ -313,7 +313,7 @@ def save_figure(export_PLOT, timestamp, filename_i, analysis_folder, Force_Dista
     ]
 
     subplot2.set_title("Trimmed FD-Curve - steps marked")
-    subplot2.legend(legend_elements, ['Steps found by F-derivation', 'Steps found by D-derivation'])
+    subplot2.legend(legend_elements, ['Steps found by F-derivative', 'Steps found by D-derivative'])
     subplot2.scatter(PD_trimmed, F_trimmed, marker='.', s=0.6, linewidths=None, alpha=1)
 
     for i in range(len(PD_start_F)):
@@ -323,19 +323,19 @@ def save_figure(export_PLOT, timestamp, filename_i, analysis_folder, Force_Dista
 
     subplot3.set_xlabel("Distance (nm)")
     subplot3.set_ylabel("delta Distance (nm/ms)")
-    subplot3.set_title("Distance derivation")
-    subplot3.plot(derivation_array[:, 1], derivation_array[:, 3])
+    subplot3.set_title("Distance derivative")
+    subplot3.plot(derivative_array[:, 1], derivative_array[:, 3])
 
-    subplot3.plot(derivation_array[:, 1], y_vector_PD)
-    subplot3.fill_between(derivation_array[:, 1], PD_mm2_STD2_positive, PD_mm2_STD2_negative, color='black', alpha=0.30)
+    subplot3.plot(derivative_array[:, 1], y_vector_PD)
+    subplot3.fill_between(derivative_array[:, 1], PD_mm2_STD2_positive, PD_mm2_STD2_negative, color='black', alpha=0.30)
 
     subplot4.set_xlabel("Distance (nm)")
     subplot4.set_ylabel("delta Force (pN/ms)")
-    subplot4.set_title("Force derivation")
-    subplot4.plot(derivation_array[:, 1], derivation_array[:, 2])
+    subplot4.set_title("Force derivative")
+    subplot4.plot(derivative_array[:, 1], derivative_array[:, 2])
 
-    subplot4.plot(derivation_array[:, 1], y_vector_F)
-    subplot4.fill_between(derivation_array[:, 1], list(F_mm2_STD2_positive), list(F_mm2_STD2_negative), color='black', alpha=0.30)
+    subplot4.plot(derivative_array[:, 1], y_vector_F)
+    subplot4.fill_between(derivative_array[:, 1], list(F_mm2_STD2_positive), list(F_mm2_STD2_negative), color='black', alpha=0.30)
 
     if export_PLOT == 1:
         plotname = analysis_folder + "/" + filename_i + "_plot_" + timestamp + ".png"

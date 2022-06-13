@@ -49,7 +49,7 @@ default_values_FIT = {
     'Contour-Length ds, nm': '830',
     'Contour-Length ss, nm': '0',
     'Stiffness ds, pN': '500',
-    'Stiffness ds, upper bound, pN': '1500',
+    'Stiffness ds, upper bound, pN': '600',
     'Stiffness ds, lower bound, pN': '400',
     'Stiffness ss, pN': '800',
     'Force offset, pN': '0',

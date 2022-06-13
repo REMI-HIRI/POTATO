@@ -9,7 +9,7 @@ def plot_TOMATO(FD):
     F = FD[:, 0]
     PD_nm = FD[:, 1]
 
-    subplot1.set_xlabel("Distance [$\\mu$m]")
+    subplot1.set_xlabel("Distance [nm]")
     subplot1.set_ylabel("Force [pN]")
     subplot1.plot(PD_nm, F, color='gray')
     subplot1.tick_params('both', direction='in')

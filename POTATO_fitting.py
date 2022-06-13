@@ -10,7 +10,14 @@ from matplotlib.lines import Line2D
 """define the functions used for fitting"""
 
 
-def fitting_ds(filename_i, input_settings, export_data, input_fitting, i_start, Force_Distance, derivation_array, F_low, TOMATO_param):
+def find_nearest(array, value):
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+
+    return idx
+
+
+def fitting_ds(filename_i, input_settings, export_data, input_fitting, i_start, Force_Distance, derivative_array, F_low, TOMATO_param):
     global model_ds, fit_ds
     global ds_fit_dict
     global f_fitting_region_ds, d_fitting_region_ds
@@ -18,25 +25,25 @@ def fitting_ds(filename_i, input_settings, export_data, input_fitting, i_start, 
     global fitting_model
 
     if TOMATO_param == 0:
-        start_step1 = np.where(derivation_array[:, 1] == i_start)
+        start_step1 = np.where(derivative_array[:, 1] == i_start)
         start_step1 = start_step1[0][0]
-
         f_fitting_region_ds = Force_Distance[0:start_step1 * input_settings['step_d'] + len(F_low), 0]
         d_fitting_region_ds = Force_Distance[0:start_step1 * input_settings['step_d'] + len(F_low), 1]
-
     elif TOMATO_param == 1:
-        i_start = Force_Distance[-1, 1]
-        f_fitting_region_ds = Force_Distance[0]
-        d_fitting_region_ds = Force_Distance[1]
+        start_step1 = find_nearest(Force_Distance[:, 1], i_start)
+        f_fitting_region_ds = Force_Distance[0:start_step1, 0]
+        d_fitting_region_ds = Force_Distance[0:start_step1, 1]
 
-    delta_f = f_fitting_region_ds[-1] - f_fitting_region_ds[0]
-    delta_d = d_fitting_region_ds[-1] - d_fitting_region_ds[0]
-    d_f_ratio = delta_d / delta_f
+        # start_step1 = start_step1[0][0]
 
-    # downsample the data used for fitting with a dD/dF ratio
-    while len(f_fitting_region_ds) > 100 * d_f_ratio:
-        f_fitting_region_ds = f_fitting_region_ds[::2]
-        d_fitting_region_ds = d_fitting_region_ds[::2]
+    # delta_f = f_fitting_region_ds[-1] - f_fitting_region_ds[0]
+    # delta_d = d_fitting_region_ds[-1] - d_fitting_region_ds[0]
+    # d_f_ratio = delta_d / delta_f
+    #
+    # # downsample the data used for fitting with a dD/dF ratio
+    # while len(f_fitting_region_ds) > 100 * d_f_ratio:
+    #     f_fitting_region_ds = f_fitting_region_ds[::2]
+    #     d_fitting_region_ds = d_fitting_region_ds[::2]
 
     model_ds = lk.inverted_odijk("ds_part").subtract_independent_offset() + lk.force_offset("ds_part")
 
@@ -97,22 +104,27 @@ def fitting_ds(filename_i, input_settings, export_data, input_fitting, i_start, 
         'd_offset': fit_ds["ds_part/d_offset"].value
     }
 
-    return ds_fit_dict, area_ds
+    return ds_fit_dict, area_ds, start_step1
 
 
-def fitting_ss(filename_i, input_settings, export_data, input_fitting, i_start, i_end, Force_Distance, fix, max_range, derivation_array, F_low):
+def fitting_ss(filename_i, input_settings, export_data, input_fitting, i_start, i_end, Force_Distance, fix, max_range, derivative_array, F_low, TOMATO_param):
     global model_ss
     global ss_fit_dict
 
-    start_fitting_region = np.where(derivation_array[:, 1] == i_start)
-    end_fitting_region = np.where(derivation_array[:, 1] == i_end)
-    start_fitting_region = start_fitting_region[0][0]
-    end_fitting_region = end_fitting_region[0][0]
+    if TOMATO_param == 0:
+        start_fitting_region = np.where(derivative_array[:, 1] == i_start)
+        end_fitting_region = np.where(derivative_array[:, 1] == i_end)
+        start_fitting_region = start_fitting_region[0][0]
+        end_fitting_region = end_fitting_region[0][0]
+        raw_f_fitting_region = Force_Distance[start_fitting_region * input_settings['step_d'] + len(F_low):end_fitting_region * input_settings['step_d'] + len(F_low), 0]
+        raw_d_fitting_region = Force_Distance[start_fitting_region * input_settings['step_d'] + len(F_low):end_fitting_region * input_settings['step_d'] + len(F_low), 1]
+    elif TOMATO_param == 1:
+        start_fitting_region = find_nearest(Force_Distance[:, 1], i_start)
+        end_fitting_region = find_nearest(Force_Distance[:, 1], i_end)
+        raw_f_fitting_region = Force_Distance[start_fitting_region:end_fitting_region, 0]
+        raw_d_fitting_region = Force_Distance[start_fitting_region:end_fitting_region, 1]
 
-    raw_f_fitting_region = Force_Distance[start_fitting_region * input_settings['step_d'] + len(F_low):end_fitting_region * input_settings['step_d'] + len(F_low), 0]
-    raw_d_fitting_region = Force_Distance[start_fitting_region * input_settings['step_d'] + len(F_low):end_fitting_region * input_settings['step_d'] + len(F_low), 1]
-
-    # downsample the data used for fitting to 200 datapoints
+    # downsample the data used for fitting to around 200 datapoints
     if len(raw_f_fitting_region) > 200:
         f_fitting_region_ss = raw_f_fitting_region[::int(len(raw_f_fitting_region) / 200)]
         d_fitting_region_ss = raw_d_fitting_region[::int(len(raw_f_fitting_region) / 200)]
@@ -210,6 +222,7 @@ def fitting_ss(filename_i, input_settings, export_data, input_fitting, i_start, 
     ss_fit_dict = {
         'filename': filename_i,
         'model': fitting_model,
+        'model_ss': model_ss,
         'log_likelihood': fit_qual,
         'Lc_ds': fit_ss["DNA_2/Lc"].value,
         'Lp_ds': fit_ss["DNA_2/Lp"].value,

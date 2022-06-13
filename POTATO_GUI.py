@@ -29,11 +29,11 @@ import json
 
 # relative imports
 from POTATO_ForceRamp import start_subprocess, read_in_data
-from POTATO_preprocessing import preprocess_RAW
+from POTATO_preprocessing import preprocess_RAW, create_derivative
 from POTATO_config import default_values_HF, default_values_LF, default_values_CSV, default_values_FIT, default_values_constantF
 from POTATO_constantF import get_constantF, display_constantF, fit_constantF
-from POTATO_fitting import fitting_ds
-
+from POTATO_fitting import fitting_ds, fitting_ss
+from POTATO_find_steps import calc_integral
 
 # To avoid blurry GUI - DPI scaling
 import ctypes
@@ -51,7 +51,7 @@ def start_analysis():
     global analysis_folder
 
     # check user input
-    input_settings, input_format, export_data, input_fitting, TOMATO_fitting, input_constantF = check_settings()
+    input_settings, input_format, export_data, input_fitting, input_constantF = check_settings()
 
     # ask wich directory should be analysed
     folder = filedialog.askdirectory()
@@ -106,72 +106,36 @@ def start_analysis():
 
 
 # display default values in the GUI
-def parameters(frame, default_values, default_fit, default_constantF):
-    downsample_value1.delete(0, "end")
-    downsample_value1.insert("end", default_values['Downsampling rate'])
-    downsample_value2.delete(0, "end")
-    downsample_value2.insert("end", default_values['Downsampling rate'])
-    Filter_degree1.delete(0, "end")
-    Filter_degree1.insert("end", default_values['Butterworth filter degree'])
-    Filter_degree2.delete(0, "end")
-    Filter_degree2.insert("end", default_values['Butterworth filter degree'])
-    Filter_cut_off1.delete(0, "end")
-    Filter_cut_off1.insert("end", default_values['Cut-off frequency'])
-    Filter_cut_off2.delete(0, "end")
-    Filter_cut_off2.insert("end", default_values['Cut-off frequency'])
-    Force_Min1.delete(0, "end")
-    Force_Min1.insert("end", default_values['Force threshold, pN'])
-    Force_Min2.delete(0, "end")
-    Force_Min2.insert("end", default_values['Force threshold, pN'])
-    Z_score_force1.delete(0, "end")
-    Z_score_force1.insert("end", default_values['Z-score force'])
-    Z_score_force2.delete(0, "end")
-    Z_score_force2.insert("end", default_values['Z-score force'])
-    Z_score_distance1.delete(0, "end")
-    Z_score_distance1.insert("end", default_values['Z-score distance'])
-    Z_score_distance2.delete(0, "end")
-    Z_score_distance2.insert("end", default_values['Z-score distance'])
-    step_d_value.delete(0, "end")
-    step_d_value.insert("end", str(default_values['Step d']))
-    window_size_value.delete(0, "end")
-    window_size_value.insert("end", str(default_values['Moving median window size']))
-    STD_difference_value.delete(0, "end")
-    STD_difference_value.insert("end", str(default_values['STD difference threshold']))
-    Frequency_value.delete(0, "end")
-    Frequency_value.insert("end", str(default_values['Data frequency, Hz']))
+def parameters(default_values, default_fit, default_constantF):
+    if not default_values == 0:
+        downsample_value.set(default_values['Downsampling rate'])
+        Filter_degree.set(default_values['Butterworth filter degree'])
+        Filter_cut_off.set(default_values['Cut-off frequency'])
+        Force_Min.set(default_values['Force threshold, pN'])
+        Z_score_force.set(default_values['Z-score force'])
+        Z_score_distance.set(default_values['Z-score distance'])
 
-    dsLp.delete(0, "end")
-    dsLp.insert("end", str(default_fit['Persistance-Length ds, nm']))
-    dsLp_up.delete(0, "end")
-    dsLp_up.insert("end", str(default_fit['Persistance-Length ds, upper bound, nm']))
-    dsLp_low.delete(0, "end")
-    dsLp_low.insert("end", str(default_fit['Persistance-Length ds, lower bound, nm']))
-    ssLp.delete(0, "end")
-    ssLp.insert("end", str(default_fit['Persistance-Length ss, nm']))
-    dsLc.delete(0, "end")
-    dsLc.insert("end", str(default_fit['Contour-Length ds, nm']))
-    ssLc.delete(0, "end")
-    ssLc.insert("end", str(default_fit['Persistance-Length ss, nm']))
-    stiff_ds.delete(0, "end")
-    stiff_ds.insert("end", str(default_fit['Stiffness ds, pN']))
-    stiff_ds_up.delete(0, "end")
-    stiff_ds_up.insert("end", str(default_fit['Stiffness ds, upper bound, pN']))
-    stiff_ds_low.delete(0, "end")
-    stiff_ds_low.insert("end", str(default_fit['Stiffness ds, lower bound, pN']))
-    stiff_ss.delete(0, "end")
-    stiff_ss.insert("end", str(default_fit['Stiffness ss, pN']))
-    f_off.delete(0, "end")
-    f_off.insert("end", str(default_fit['Force offset, pN']))
-    f_off_up.delete(0, "end")
-    f_off_up.insert("end", str(default_fit['Force offset, upper bound, pN']))
-    f_off_low.delete(0, "end")
-    f_off_low.insert("end", str(default_fit['Force offset, lower bound, pN']))
-    d_off.delete(0, "end")
-    d_off.insert("end", str(default_fit['Distance offset, nm']))
-    d_off_up.delete(0, "end")
-    d_off_up.insert("end", str(default_fit['Distance offset, upper bound, nm']))
-    d_off_low.delete(0, "end")
-    d_off_low.insert("end", str(default_fit['Distance offset, lower bound, nm']))
+        step_d_variable.set(str(default_values['Step d']))
+        window_size_variable.set(str(default_values['Moving median window size']))
+        STD_difference_variable.set(str(default_values['STD difference threshold']))
+        Frequency_variable.set(str(default_values['Data frequency, Hz']))
+
+    dsLp_variable.set(str(default_fit['Persistance-Length ds, nm']))
+    dsLp_up_variable.set(str(default_fit['Persistance-Length ds, upper bound, nm']))
+    dsLp_low_variable.set(str(default_fit['Persistance-Length ds, lower bound, nm']))
+    ssLp_variable.set(str(default_fit['Persistance-Length ss, nm']))
+    dsLc_variable.set(str(default_fit['Contour-Length ds, nm']))
+    ssLc_variable.set(str(default_fit['Persistance-Length ss, nm']))
+    stiff_ds_variable.set(str(default_fit['Stiffness ds, pN']))
+    stiff_ds_up_variable.set(str(default_fit['Stiffness ds, upper bound, pN']))
+    stiff_ds_low_variable.set(str(default_fit['Stiffness ds, lower bound, pN']))
+    stiff_ss_variable.set(str(default_fit['Stiffness ss, pN']))
+    f_off_variable.set(str(default_fit['Force offset, pN']))
+    f_off_up_variable.set(str(default_fit['Force offset, upper bound, pN']))
+    f_off_low_variable.set(str(default_fit['Force offset, lower bound, pN']))
+    d_off_variable.set(str(default_fit['Distance offset, nm']))
+    d_off_up_variable.set(str(default_fit['Distance offset, upper bound, nm']))
+    d_off_low_variable.set(str(default_fit['Distance offset, lower bound, nm']))
 
     x_min.delete(0, "end")
     x_min.insert("end", str(default_constantF['x min']))
@@ -189,15 +153,6 @@ def parameters(frame, default_values, default_fit, default_constantF):
     STD_gauss.insert("end", str(default_constantF['STD']))
     amplitude_gauss.delete(0, "end")
     amplitude_gauss.insert("end", str(default_constantF['Amplitude']))
-
-
-# update value that has been changed (needs event <ENTER>)
-def user_input(event, param1, param2):
-    new_param = param1.get()
-    param1.delete(0, "end")
-    param2.delete(0, "end")
-    param1.insert("end", new_param)
-    param2.insert("end", new_param)
 
 
 # get all settings from the user input before start of the analysis
@@ -254,27 +209,6 @@ def check_settings():
         'offset_d_low': float(d_off_low.get())
     }
 
-    TOMATO_fitting = {
-        'WLC+WLC': int(check_box_WLC.get()),
-        'WLC+FJC': int(check_box_FJC.get()),
-        'lp_ds': float(entryText_ds_Lp.get()),
-        'lp_ds_up': float(dsLp_up.get()),
-        'lp_ds_low': float(dsLp_low.get()),
-        'lc_ds': float(entryText_ds_Lc.get()),
-        'lp_ss': float(entryText_ss_Lp.get()),
-        'lc_ss': float(entryText_ss_Lc.get()),
-        'ss_stiff': float(entryText_ss_St.get()),
-        'offset_f': float(entryText_shift_F.get()),
-        'offset_f_up': float(f_off_up.get()),
-        'offset_f_low': float(f_off_low.get()),
-        'offset_d': float(entryText_shift_d.get()),
-        'offset_d_up': float(d_off_up.get()),
-        'offset_d_low': float(d_off_low.get()),
-        'ds_stiff': float(entryText_ds_St.get()),
-        'ds_stiff_up': float(entryText_ds_St.get()) + float(stiff_ds_up.get()),
-        'ds_stiff_low': float(entryText_ds_St.get()) - float(stiff_ds_low.get())
-    }
-
     input_constantF = {
         'x min': int(x_min.get()),
         'x max': int(x_max.get()),
@@ -286,7 +220,7 @@ def check_settings():
         'Amplitude': amplitude_gauss.get()
     }
 
-    return input_settings, input_format, export_data, input_fitting, TOMATO_fitting, input_constantF
+    return input_settings, input_format, export_data, input_fitting, input_constantF
 
 
 def export_settings(analysis_path, timestamp, input_1, input_2):
@@ -328,7 +262,7 @@ def readme():
 
 # display a single h5 file (tab2)
 def getRAW_File_h5():
-    input_settings, input_format, export_data, input_fitting, TOMATO_fitting, input_constantF = check_settings()
+    input_settings, input_format, export_data, input_fitting, input_constantF = check_settings()
     import_file_path = filedialog.askopenfilename()
     with h5py.File(import_file_path, "r") as raw_data:
         # access the raw data
@@ -364,12 +298,11 @@ def getRAW_File_csv():
     if not check_box_CSV.get() == 1:
         check_box_CSV.set(value=1)
         select_box(check_box_CSV, check_box_HF, check_box_LF)
-        parameters(parameter_frame, default_values_CSV, default_values_FIT, default_values_constantF)
-        parameters(tab3, default_values_CSV, default_values_FIT, default_values_constantF)
+        parameters(default_values_CSV, default_values_FIT, default_values_constantF)
     else:
         pass
 
-    input_settings, input_format, export_data, input_fitting, TOMATO_fitting, input_constantF = check_settings()
+    input_settings, input_format, export_data, input_fitting, input_constantF = check_settings()
     import_file_path = filedialog.askopenfilename()
 
     df = pd.read_csv(import_file_path)
@@ -407,7 +340,7 @@ def display_RAW_FD(processed_F, processed_D, raw_F, raw_D):
 
 
 def start_constantF():
-    input_settings, input_format, export_data, input_fitting, TOMATO_fitting, input_constantF = check_settings()
+    input_settings, input_format, export_data, input_fitting, input_constantF = check_settings()
     Force_Distance, Force_Distance_um, frequency, filename, analysis_path, timestamp = get_constantF(input_settings, input_format, input_constantF)
     fig_constantF, hist_D, filteredDistance_ready = display_constantF(Force_Distance, Force_Distance_um, frequency, input_settings, input_constantF)
     os.mkdir(analysis_path)
@@ -420,7 +353,7 @@ def start_constantF():
 
 
 def show_constantF():
-    input_settings, input_format, export_data, input_fitting, TOMATO_fitting, input_constantF = check_settings()
+    input_settings, input_format, export_data, input_fitting, input_constantF = check_settings()
     Force_Distance, Force_Distance_um, frequency, filename, analysis_path, timestamp = get_constantF(input_settings, input_format, input_constantF)
     fig_constantF, hist_D, filteredDistance_ready = display_constantF(Force_Distance, Force_Distance_um, frequency, input_settings, input_constantF)
     fig_constantF_tk = FigureCanvasTkAgg(fig_constantF, figure_frame_tab4)
@@ -436,14 +369,6 @@ def on_closing():
 
 
 ################ TOMATO ###############################
-# from POTATO_TOMATO import open_folder, create_chart, clear_charts, start_click, \
-#     end_click, Fitting_WLC_ds_handles, Fitting_WLC_ss_handles, export_table, clear_table_last, \
-#     clear_table, reset_parameters, start_work_click, end_work_click, calc_rWork, calc_strWork, next_FD, \
-#     previous_FD_key, next_FD_key, save_key, start_click_key, end_click_key, \
-#     end_work_click_key, zero_str_work_key, fit_ds_key, fit_ss_key, calc_rWork_key, calc_strWork_key, start_work_click_key, \
-#     load_previous_data_key,  previous_FD, write_to_table, export_model, zero_str_work
-import lumicks.pylake as lk
-from scipy.integrate import simps
 from POTATO_TOMATO import plot_TOMATO
 
 
@@ -451,12 +376,12 @@ from POTATO_TOMATO import plot_TOMATO
 def open_folder():
     global filename_TOMATO
     global Force_Distance_TOMATO
-    global import_file_path
+    global der_arr_TOMATO
     global TOMATO_fig1
     global Files
     global FD_number
     # check user input
-    input_settings, input_format, export_data, input_fitting, TOMATO_fitting, input_constantF = check_settings()
+    input_settings, input_format, export_data, input_fitting, input_constantF = check_settings()
 
     # ask wich directory should be analysed
     folder = filedialog.askdirectory()
@@ -472,13 +397,14 @@ def open_folder():
 
     FD_number = 0
     Force_Distance_TOMATO, Force_Distance_um_TOMATO, Frequency_value, filename_TOMATO = read_in_data(FD_number, Files, input_settings, input_format)
+    der_arr_TOMATO = create_derivative(input_settings, Frequency_value, Force_Distance_TOMATO[:, 0], Force_Distance_TOMATO[:, 1], 0)
+
     entryText_filename.set(filename_TOMATO)
 
-    reset_parameters()
     fig = plot_TOMATO(Force_Distance_TOMATO)
-    TOMATO_fig1 = FigureCanvasTkAgg(fig, TOMATO_frame)
+    TOMATO_fig1 = FigureCanvasTkAgg(fig, TOMATO_figure_frame)
     TOMATO_fig1.get_tk_widget().grid(row=0, column=0, sticky='wens')
-    toolbarFrame = tk.Frame(master=TOMATO_frame)
+    toolbarFrame = tk.Frame(master=TOMATO_figure_frame)
     toolbarFrame.grid(row=2, column=0)
     toolbar = NavigationToolbar2Tk(TOMATO_fig1, toolbarFrame)
 
@@ -488,133 +414,30 @@ def change_FD(direction):
     global filename_TOMATO
     global FD_number
     global Force_Distance_TOMATO
+    global orientation
+
     FD_number = FD_number + direction
 
-    input_settings, input_format, export_data, input_fitting, TOMATO_fitting, input_constantF = check_settings()
+    delete_all_steps()
+    input_settings, input_format, export_data, input_fitting, input_constantF = check_settings()
     Force_Distance_TOMATO, Force_Distance_um_TOMATO, Frequency_value, filename_TOMATO = read_in_data(FD_number, Files, input_settings, input_format)
 
+    orientation = 'forward'
     if Force_Distance_TOMATO[0, 1] > Force_Distance_TOMATO[-1, 1]:  # reverse
         Force_Distance_TOMATO = np.flipud(Force_Distance_TOMATO)
         Force_Distance_um_TOMATO = np.flipud(Force_Distance_um_TOMATO)
+        orientation = 'reverse'
 
     entryText_filename.set(filename_TOMATO)
 
-    reset_parameters()
+    parameters(0, default_values_FIT, default_values_constantF)
+
     fig = plot_TOMATO(Force_Distance_TOMATO)
-    TOMATO_fig1 = FigureCanvasTkAgg(fig, TOMATO_frame)
+    TOMATO_fig1 = FigureCanvasTkAgg(fig, TOMATO_figure_frame)
     TOMATO_fig1.get_tk_widget().grid(row=0, column=0, sticky='wens')
-    toolbarFrame = tk.Frame(master=TOMATO_frame)
+    toolbarFrame = tk.Frame(master=TOMATO_figure_frame)
     toolbarFrame.grid(row=2, column=0)
     toolbar = NavigationToolbar2Tk(TOMATO_fig1, toolbarFrame)
-
-
-def save_previous_data():
-    global TOMATO_dict
-    TOMATO_dict = {'shift_d': entryText_shift_d.get(),
-                   'shift_F': entryText_shift_F.get(),
-                   'dsWork': entryText_dsWork.get(),
-                   'ds_St': entryText_ds_St.get(),
-                   'ss_St': entryText_ss_St.get(),
-                   'ssWork': entryText_ssWork.get(),
-                   'ds_Lp': entryText_ds_Lp.get(),
-                   'ss_Lp': entryText_ss_Lp.get(),
-                   'rWork': entryText_rWork.get(),
-                   'ds_Lc': entryText_ds_Lc.get(),
-                   'ss_Lc': entryText_ss_Lc.get(),
-                   'strWork': entryText_strWork.get(),
-                   'fit_end': entryText_end.get(),
-                   'fit_start': entryText_start.get(),
-                   'start_work_D': entryText_start_work_D.get(),
-                   'start_work_F': entryText_start_work_F.get(),
-                   'end_work_D': entryText_end_work_D.get(),
-                   'end_work_F': entryText_end_work_F.get(),
-                   }
-
-
-    try:
-        TOMATO_dict['FD plot'] = Force_Distance_TOMATO
-    except:
-        pass
-
-    try:
-        TOMATO_dict['ds_fitted_region'] = [Force_Distance_TOMATO[:, 1][real_start_2: real_end_2], Force_Distance_TOMATO[:, 0][real_start_2: real_end_2]]
-    except:
-        pass
-
-    try:
-        TOMATO_dict['ss_fitted_region'] = [Force_Distance_TOMATO[:, 1][real_start_3:real_end_3], Force_Distance_TOMATO[:, 0][real_start_3:real_end_3]]
-    except:
-        pass
-
-    try:
-        TOMATO_dict['ds_fit_plot'] = [distance, F_ds_model]
-    except:
-        pass
-
-    try:
-        TOMATO_dict['ss_fit_plot'] = [distance, F_ss_model]
-    except:
-        pass
-
-    try:
-        TOMATO_dict['result_table'] = listBox
-    except:
-        pass
-
-
-def load_previous_data():
-    entryText_shift_d.set(TOMATO_dict['shift_d'])
-    entryText_shift_F.set(TOMATO_dict['shift_F'])
-    entryText_dsWork.set(TOMATO_dict['dsWork'])
-    entryText_ds_St.set(TOMATO_dict['ds_St'])
-    entryText_ss_St.set(TOMATO_dict['ss_St'])
-    entryText_ssWork.set(TOMATO_dict['ssWork'])
-    entryText_ds_Lp.set(TOMATO_dict['ds_Lp'])
-    entryText_ss_Lp.set(TOMATO_dict['ss_Lp'])
-    entryText_rWork.set(TOMATO_dict['rWork'])
-    entryText_ds_Lc.set(TOMATO_dict['ds_Lc'])
-    entryText_ss_Lc.set(TOMATO_dict['ss_Lc'])
-    entryText_strWork.set(TOMATO_dict['strWork'])
-    entryText_end.set(TOMATO_dict['fit_end'])
-    entryText_start.set(TOMATO_dict['fit_start'])
-    entryText_start_work_D.set(TOMATO_dict['start_work_D'])
-    entryText_start_work_F.set(TOMATO_dict['start_work_F'])
-    entryText_end_work_D.set(TOMATO_dict['end_work_D'])
-    entryText_end_work_F.set(TOMATO_dict['end_work_F'])
-
-    global TOMATO_fig1
-    fig = plot_TOMATO(np.array([TOMATO_dict['FD plot'][1], TOMATO_dict['FD plot'][0]]))
-
-    TOMATO_fig1 = FigureCanvasTkAgg(fig, TOMATO_frame)
-    TOMATO_fig1.get_tk_widget().grid(row=0, column=0, sticky='wens')
-
-    toolbarFrame = tk.Frame(master=TOMATO_frame)
-    toolbarFrame.grid(row=2, column=0)
-    toolbar = NavigationToolbar2Tk(TOMATO_fig1, toolbarFrame)
-
-    #  ds fitted region
-    try:
-        subplot1.plot(TOMATO_dict['ds_fitted_region'][0], TOMATO_dict['ds_fitted_region'][1], color="b")
-    except:
-        pass
-
-    # ss fitted region
-    try:
-        subplot1.plot(TOMATO_dict['ss_fitted_region'][0], TOMATO_dict['ss_fitted_region'][1], color="r")
-    except:
-        pass
-
-    # ds fit plot
-    try:
-        subplot1.plot(TOMATO_dict['ds_fit_plot'][0], TOMATO_dict['ds_fit_plot'][1], marker=None,linestyle='dashed',linewidth=1,color="black")
-    except:
-        pass
-
-    # ss fit plot
-    try:
-        subplot1.plot(TOMATO_dict['ss_fit_plot'][0], TOMATO_dict['ss_fit_plot'][1], marker=None, linestyle='dashed', linewidth=1, color="black")
-    except:
-        pass
 
 
 # key binding wrapper functions
@@ -626,8 +449,12 @@ def next_FD_key(event):
     change_FD(+1)
 
 
-def save_key(event):
-    write_to_table()
+def save_step_key(event):
+    save_step()
+
+
+def start_analysis_key(event):
+    analyze_steps()
 
 
 def start_click_key(event):
@@ -636,49 +463,6 @@ def start_click_key(event):
 
 def end_click_key(event):
     end_click()
-
-
-def start_work_click_key(event):
-    start_work_click()
-
-
-def end_work_click_key(event):
-    end_work_click()
-
-
-def zero_str_work_key(event):
-    zero_str_work()
-
-
-def fit_ds_key(event):
-    Fitting_WLC_ds_handles()
-
-
-def fit_ss_key(event):
-    Fitting_WLC_ss_handles()
-
-
-def load_previous_data_key(event):
-    load_previous_data()
-
-
-def calc_rWork_key(event):
-    calc_rWork()
-
-
-def calc_strWork_key(event):
-    calc_strWork()
-
-
-def create_chart():
-    global TOMATO_fig1
-
-    fig = plot_TOMATO(Force_Distance_TOMATO)
-    TOMATO_fig1 = FigureCanvasTkAgg(fig, TOMATO_frame)
-    TOMATO_fig1.get_tk_widget().grid(row=0, column=0, sticky='wens')
-    toolbarFrame = tk.Frame(master=TOMATO_frame)
-    toolbarFrame.grid(row=2, column=0)
-    toolbar = NavigationToolbar2Tk(TOMATO_fig1, toolbarFrame)
 
 
 def start_click():
@@ -695,405 +479,333 @@ def onclick_start_end(event, pos):
     global cid
 
     PD_position, F_position = float(event.xdata), float(event.ydata)
-    print(PD_position, F_position)
+
     if pos == 1:
-        entryText_start.set(round(PD_position, 1))
+        entryText_startF.set(round(F_position, 1))
+        entryText_startD.set(round(PD_position, 1))
     elif pos == 0:
-        entryText_end.set(round(PD_position, 1))
+        entryText_endF.set(round(F_position, 1))
+        entryText_endD.set(round(PD_position, 1))
     TOMATO_fig1.mpl_disconnect(cid)
 
 
-def start_work_click():
-    global cid
-    cid = TOMATO_fig1.mpl_connect('button_press_event', lambda event, arg=1: onclick_work(event, arg))
+def save_step():
+    global step_number
+    try:
+        tree_steps.insert('', 'end', values=(step_number, entryText_startF.get(), entryText_endF.get(), entryText_startD.get(), entryText_endD.get()))
+        step_number += 1
+    except:
+        print('Please make sure step start and step end are selected!')
 
 
-def end_work_click():
-    global cid
-    cid = TOMATO_fig1.mpl_connect('button_press_event', lambda event, arg=0: onclick_work(event, arg))
-
-
-def onclick_work(event, pos):
-    global cid
-
-    PD_position, F_position = float(event.xdata), float(event.ydata)
-    print(PD_position, F_position)
-    if pos == 1:
-        entryText_start_work_D.set(round(PD_position, 1))
-        entryText_start_work_F.set(round(F_position, 3))
-    elif pos == 0:
-        entryText_end_work_D.set(round(PD_position, 1))
-        entryText_end_work_F.set(round(F_position, 3))
-    TOMATO_fig1.mpl_disconnect(cid)
-
-
-def calc_rWork():
-    x1 = float(entryText_start_work_D.get())
-    x2 = float(entryText_end_work_D.get())
-
-    y1 = float(entryText_start_work_F.get())
-    y2 = float(entryText_end_work_F.get())
-
-    rWork = (x2 - x1) * (y1 + y2) / 2 / 4.114
-
-    entryText_rWork.set(rWork)
-    entryText_strWork.set("0")
-
-
-def calc_strWork():
-    dsWork = float(entryText_dsWork.get())
-    rWork = float(entryText_rWork.get())
-    ssWork = float(entryText_ssWork.get())
-
-    strWork = dsWork + rWork - ssWork
-    entryText_strWork.set(strWork)
-
-
-def write_to_table():
-    global listBox
-
-    if float(entryText_strWork.get()) == 0:
-        work_done = entryText_rWork.get()
-    else:
-        work_done = entryText_strWork.get()
-    listBox.insert("", "end", values=(filename_TOMATO, entryText_start_work_F.get(), entryText_end_work_F.get(), (float(entryText_start_work_F.get()) + float(entryText_end_work_F.get())) / 2, entryText_start_work_D.get(), entryText_end_work_D.get(), float(entryText_end_work_D.get()) - float(entryText_start_work_D.get()), entry_ds_Lc.get(), entry_ds_Lp.get(), entry_ds_St.get(), entry_ss_Lc.get(), entry_ss_Lp.get(), entry_ss_St.get(), entry_shift_F.get(), entry_shift_d.get(), work_done))
-
-
-def clear_charts():
-    TOMATO_fig1.get_tk_widget().grid_forget()
-
-
-def clear_table():
-    global listBox
-    list_items = listBox.get_children("")
-
-    for item in list_items:
-        listBox.delete(item)
-
-
-def clear_table_last():
-    global listBox
-    list_items = listBox.get_children("")
-
-    listBox.delete(list_items[-1])
-
-
-def reset_parameters():
-    entryText_shift_d.set("0")
-    entryText_shift_F.set("0")
-    entryText_ds_Lp.set("40")
-    entryText_ds_Lc.set("1256")
-    entryText_ss_Lc.set("0")
-    entryText_ss_Lp.set("1")
-    entryText_ss_St.set("800")
-    entryText_ds_St.set("400")
-    entryText_dsWork.set("0")
-    entryText_ssWork.set("0")
-    entryText_rWork.set("0")
-    entryText_strWork.set("0")
-
-
-def fitting_ss_TOMATO(PD_ss, F_ss, Ds_fit_dict, fix, max_range):
-
-    model_ss = lk.odijk("DNA_2") + lk.odijk("RNA")
-
-    model_ss = model_ss.invert().subtract_independent_offset() + lk.force_offset("DNA")
-    fit_ss = lk.FdFit(model_ss)
-
-    fit_ss.add_data("ss_part", F_ss, PD_ss)
-
-    ## ds part parameters
-
-    # Persistance length bounds
-    # Lp_ds_range=fit_ds["DNA/Lp"].value/10
-    fit_ss["DNA_2/Lp"].value = Ds_fit_dict['Lp_ds']
-    fit_ss["DNA_2/Lp"].lower_bound = Ds_fit_dict['Lp_ds'] * (1 - max_range / 100)
-    fit_ss["DNA_2/Lp"].upper_bound = Ds_fit_dict['Lp_ds'] * (1 + max_range / 100)
-    # if fix==1:
-    fit_ss["DNA_2/Lp"].fixed = 'True'
-    fit_ss["DNA/f_offset"].upper_bound = float(f_off_up.get())
-    fit_ss["DNA/f_offset"].lower_bound = float(f_off_low.get())
-    fit_ss["DNA/f_offset"].value = Ds_fit_dict['f_offset']
-    fit_ss["DNA/f_offset"].fixed = 'True'
-
-    fit_ss["inv(DNA_2_with_RNA)/d_offset"].value = Ds_fit_dict['d_offset']
-    fit_ss["inv(DNA_2_with_RNA)/d_offset"].fixed = 'True'
-
-    # contour length
-    # Lc_ds_range=Lc_initial_guess/100 # nm
-    fit_ss["DNA_2/Lc"].upper_bound = Ds_fit_dict['Lc_ds'] * (1 + max_range / 100)
-    fit_ss["DNA_2/Lc"].lower_bound = Ds_fit_dict['Lc_ds'] * (1 - max_range / 100)
-    fit_ss["DNA_2/Lc"].value = Ds_fit_dict['Lc_ds']
-    fit_ss["DNA_2/Lc"].unit = 'nm'
-    # if fix==1:
-    fit_ss["DNA_2/Lc"].fixed = 'True'
-
-    # stifness
-
-    fit_ss["DNA_2/St"].upper_bound = Ds_fit_dict['St_ds'] * (1 + max_range / 100)
-    fit_ss["DNA_2/St"].lower_bound = Ds_fit_dict['St_ds'] * (1 - max_range / 100)
-    fit_ss["DNA_2/St"].value = Ds_fit_dict['St_ds']
-    if fix == 1:
-        fit_ss["DNA_2/St"].fixed = 'True'
-
-    ## ss part parameters
-    # Persistance length bounds
-
-    fit_ss["RNA/Lp"].value = float(entryText_ss_Lp.get())
-    fit_ss["RNA/Lp"].lower_bound = 0.8
-    fit_ss["RNA/Lp"].upper_bound = 2
-    if fix == 1:
-        fit_ss["RNA/Lp"].fixed = 'True'
-
-    # stiffnes
-    fit_ss["RNA/St"].value = float(entryText_ss_St.get())
-    fit_ss["RNA/St"].lower_bound = 300
-    fit_ss["RNA/St"].upper_bound = 1500
-    # contour length
-
-    fit_ss["RNA/Lc"].upper_bound = float(entryText_ss_Lc.get()) + 100
-    fit_ss["RNA/Lc"].lower_bound = 0
-    fit_ss["RNA/Lc"].value = float(entryText_ss_Lc.get())
-    fit_ss["RNA/Lc"].unit = 'nm'
-
-    fit_ss.fit()
-
-    Fit_dict = {'model': model_ss, 'fit_model': fit_ss, 'Lc_ds': fit_ss["DNA_2/Lc"].value, 'Lp_ds': fit_ss["DNA_2/Lp"].value, 'St_ds': fit_ss["DNA_2/St"].value, 'Lc_ss': fit_ss["RNA/Lc"].value, 'Lp_ss': fit_ss["RNA/Lp"].value, 'St_ss': fit_ss["RNA/St"].value, 'f_offset': fit_ss["DNA/f_offset"].value, 'd_offset': fit_ss["inv(DNA_2_with_RNA)/d_offset"].value}
-    return Fit_dict
-
-
-def Fitting_WLC_ds_handles():
-    # create a sublist of the ROI PD_nm
-    global ds_fit_dict_TOMATO
-    global F_region
-    global F_ds_model
-    global distance
-    global real_start, real_end
-    global real_start_2, real_end_2
-    # find match with PD
-    save_previous_data()
-    input_settings, input_format, export_data, input_fitting, TOMATO_fitting, input_constantF = check_settings()
-
-    real_PD = []
-    start_PD = float(entry_start.get())
-    end_PD = float(entry_end.get())
-
-    for i in [start_PD, end_PD]:
-        absolute_difference_function = lambda cPD: abs(cPD - i)
-        real_PD.append(min(Force_Distance_TOMATO[:, 1], key=absolute_difference_function))
-
-    PD_nm_list = list(Force_Distance_TOMATO[:, 1])
-
-    real_start = PD_nm_list.index(real_PD[0])
-    real_end = PD_nm_list.index(real_PD[1])
-
-    PD_region = []
-    F_region = []
-    if real_start < real_end:
-        for i in range(real_start, real_end, 10):
-            PD_region.append(Force_Distance_TOMATO[:, 1][i])
-            F_region.append(Force_Distance_TOMATO[:, 0][i])
-
-    else:
-        for i in range(real_end, real_start, 10):
-            PD_region.append(Force_Distance_TOMATO[:, 1][i])
-            F_region.append(Force_Distance_TOMATO[:, 0][i])
-
-    Force_Distance_ds_fit = np.array([F_region, PD_region])
-    ds_fit_dict_TOMATO, area_ds_TOMATO = fitting_ds(filename_TOMATO, input_settings, export_data, TOMATO_fitting, real_end, Force_Distance_ds_fit, None, None, 1)
-
-    entryText_ds_Lp.set(ds_fit_dict_TOMATO['Lp_ds'])
-    entryText_shift_F.set(ds_fit_dict_TOMATO['f_offset'])
-    entryText_shift_d.set(ds_fit_dict_TOMATO["d_offset"])
-    entryText_ds_Lc.set(ds_fit_dict_TOMATO['Lc_ds'])
-    entryText_ds_St.set(ds_fit_dict_TOMATO['St_ds'])
-
-    # plot the marked region and fitted WLC
+def analyze_steps():
     global TOMATO_fig1
     global figure1
     global subplot1
-    # model data
-    distance = np.arange(min(Force_Distance_TOMATO[:, 1]), max(Force_Distance_TOMATO[:, 1]) + 50, 2)
-    F_ds_model = ds_fit_dict_TOMATO['model_ds'](distance, ds_fit_dict_TOMATO['fit_model'])
+    global tree_results
 
+    # get input settings
+    input_settings, input_format, export_data, input_fitting, input_constantF = check_settings()
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+
+    # write step list into pandas dataframe
+    row_list = []
+    columns = ('Step number', 'F start', 'F end', 'Step start', 'Step end')
+    for row in tree_steps.get_children():
+        row_list.append(tree_steps.item(row)["values"])
+    treeview_df = pd.DataFrame(row_list, columns=columns)
+
+    # iterate through dataframe and fit each part of the curve
     figure1 = plot_TOMATO(Force_Distance_TOMATO)
-
-    if real_start < real_end:
-        real_start_2 = real_start
-        real_end_2 = real_end
-    else:
-        real_start_2 = real_end
-        real_end_2 = real_start
-
+    diff_colors = ['b', 'r', 'c', 'g', 'y', 'm', 'b', 'r', 'c', 'g', 'y', 'm']
     subplot1 = figure1.add_subplot(111)
-    subplot1.plot(Force_Distance_TOMATO[:, 1][real_start_2: real_end_2], Force_Distance_TOMATO[:, 0][real_start_2:real_end_2], color="b")
-    subplot1.plot(distance, F_ds_model, marker=None, linestyle='dashed', linewidth=1, color="black")
-    subplot1.set_ylim([min(Force_Distance_TOMATO[:, 0]), max(Force_Distance_TOMATO[:, 0])])
-    subplot1.set_xlim([min(Force_Distance_TOMATO[:, 1]) - 10, max(Force_Distance_TOMATO[:, 1]) + 10])
-    subplot1.tick_params('both', direction='in')
+    distance = np.arange(min(Force_Distance_TOMATO[:, 1]), max(Force_Distance_TOMATO[:, 1]) + 50, 2)
 
-    TOMATO_fig1 = FigureCanvasTkAgg(figure1, TOMATO_frame)
-    TOMATO_fig1.get_tk_widget().grid(row=0, column=0)
+    export_fit = []
+    fit = []
+    start_force_ss = []
+    start_distance_ss = []
+    integral_ss_fit_start = []
+    integral_ss_fit_end = []
 
-    toolbarFrame = tk.Frame(master=TOMATO_frame)
-    toolbarFrame.grid(row=2, column=0)
-    toolbar = NavigationToolbar2Tk(TOMATO_fig1, toolbarFrame)
+    for i in treeview_df.index:
+        # part before first step is fitted with a single WLC model (ds part)
+        if treeview_df['Step number'][i] == 1:
+            j = i
+            ds_fit_dict_TOMATO, TOMATO_area_ds, real_step_start = fitting_ds(filename_TOMATO, input_settings, export_data, input_fitting, float(treeview_df['Step start'][i]), Force_Distance_TOMATO, der_arr_TOMATO, [], 1)
+            ds_fit_region_end = real_step_start
 
-    entryText_dsWork.set(area_ds_TOMATO)
-    print("area_ds = " + str(area_ds_TOMATO))
-    # add the parameters to table
+            dsLp_variable.set(ds_fit_dict_TOMATO['Lp_ds'])
+            f_off_variable.set(ds_fit_dict_TOMATO['f_offset'])
+            d_off_variable.set(ds_fit_dict_TOMATO["d_offset"])
+            dsLc_variable.set(ds_fit_dict_TOMATO['Lc_ds'])
+            stiff_ds_variable.set(ds_fit_dict_TOMATO['St_ds'])
 
+            tree_results.insert("", "end", iid='{}no step'.format(timestamp), values=(
+                filename_TOMATO,
+                i,
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                dsLc_variable.get(),
+                dsLp_variable.get(),
+                stiff_ds_variable.get(),
+                '',
+                '',
+                '',
+                f_off_variable.get(),
+                d_off_variable.get(),
+                '',
+                ''
+            )
+            )
 
-## fitting the ss RNA part combined with ds handles part
-def Fitting_WLC_ss_handles():
-    # create a sublist of the ROI PD_nm
-    global F_region
-    global F_ss_model
-    global distance
-    global real_start_3, real_end_3
-    # find match with PD
+            export_fit.append(ds_fit_dict_TOMATO)
 
-    save_previous_data()
+            F_ds_model = ds_fit_dict_TOMATO['model_ds'](distance, ds_fit_dict_TOMATO['fit_model'])
+            # plot the marked ds region and fits
+            subplot1.plot(Force_Distance_TOMATO[:, 1][:real_step_start], Force_Distance_TOMATO[:, 0][:real_step_start], color=diff_colors[i])
+            subplot1.plot(distance, F_ds_model, marker=None, linestyle='dashed', linewidth=1, color="black")
 
-    real_PD = []
-    start_PD = float(entry_start.get())
-    end_PD = float(entry_end.get())
+        # fit the other ss parts
+        elif treeview_df['Step number'][i] > 1:
+            j = i
+            fit_ss, f_fitting_region_ss, d_fitting_region_ss, ss_fit_dict_TOMATO, area_ss_fit_start, area_ss_fit_end = fitting_ss(filename_TOMATO, input_settings, export_data, input_fitting, float(treeview_df['Step end'][i - 1]), float(treeview_df['Step start'][i]), Force_Distance_TOMATO, 1, 1, der_arr_TOMATO, [], 1)
 
-    for i in [start_PD, end_PD]:
-        absolute_difference_function = lambda cPD: abs(cPD - i)
-        real_PD.append(min(Force_Distance_TOMATO[:, 1], key=absolute_difference_function))
-    # print(real_PD)
+            tree_results.insert("", "end", iid='{}step{}'.format(timestamp, j), values=(
+                filename_TOMATO,
+                i,
+                Force_Distance_TOMATO[real_step_start, 0],
+                f_fitting_region_ss[0],
+                f_fitting_region_ss[0] - Force_Distance_TOMATO[real_step_start, 0],
+                Force_Distance_TOMATO[real_step_start, 1],
+                d_fitting_region_ss[0],
+                d_fitting_region_ss[0] - Force_Distance_TOMATO[real_step_start, 1],
+                '',
+                '',
+                '',
+                ssLc_variable.get(),
+                ssLp_variable.get(),
+                stiff_ss_variable.get(),
 
-    PD_nm_list = list(Force_Distance_TOMATO[:, 1])
-    real_start = PD_nm_list.index(real_PD[0])
-    real_end = PD_nm_list.index(real_PD[1])
+                f_off_variable.get(),
+                d_off_variable.get(),
+                '',
+                ''
+            )
+            )
 
-    PD_region = []
-    F_region = []
-    if abs(real_start - real_end) > 1000:
-        if real_start < real_end:
-            for i in range(real_start, real_end, 1000):
-                PD_region.append(Force_Distance_TOMATO[:, 1][i])
-                F_region.append(Force_Distance_TOMATO[:, 0][i])
+            real_step_start = np.where(Force_Distance_TOMATO[:, 0] == f_fitting_region_ss[-1])
+            real_step_start = real_step_start[0][0]
 
-        else:
-            for i in range(real_end, real_start, 1000):
-                PD_region.append(Force_Distance_TOMATO[:, 1][i])
-                F_region.append(Force_Distance_TOMATO[:, 0][i])
-    else:
-        if real_start < real_end:
-            for i in range(real_start, real_end, 100):
-                PD_region.append(Force_Distance_TOMATO[:, 1][i])
-                F_region.append(Force_Distance_TOMATO[:, 0][i])
+            fit.append(fit_ss)
+            start_force_ss.append(f_fitting_region_ss)
+            start_distance_ss.append(d_fitting_region_ss)
+            export_fit.append(ss_fit_dict_TOMATO)
+            integral_ss_fit_start.append(area_ss_fit_start)
+            integral_ss_fit_end.append(area_ss_fit_end)
 
-        else:
-            for i in range(real_end, real_start, 100):
-                PD_region.append(Force_Distance_TOMATO[:, 1][i])
-                F_region.append(Force_Distance_TOMATO[:, 0][i])
+            # plot the marked regions and fits
+            # model data
+            F_ss_model = ss_fit_dict_TOMATO['model_ss'](distance, fit_ss)
 
-    #fitting itself
-    Fit_ss = fitting_ss_TOMATO(PD_region, F_region, ds_fit_dict_TOMATO, 1, 1)
-    entryText_ds_Lp.set(Fit_ss['Lp_ds'])
-    entryText_shift_F.set(Fit_ss['f_offset'])
-    entryText_shift_d.set(Fit_ss["d_offset"])
-    entryText_ds_Lc.set(Fit_ss['Lc_ds'])
-    entryText_ss_Lc.set(Fit_ss['Lc_ss'])
-    entryText_ss_Lp.set(Fit_ss['Lp_ss'])
-    entryText_ss_St.set(Fit_ss['St_ss'])
-    entryText_ds_St.set(Fit_ss['St_ds'])
+            # plot the marked ss region and fits
+            subplot1.plot(d_fitting_region_ss[:], f_fitting_region_ss, color=diff_colors[i])
+            subplot1.plot(distance, F_ss_model, marker=None, linewidth=1, linestyle='dashed', color="black")
 
+    # fit the last part of the curve
+    fit_ss, f_fitting_region_ss, d_fitting_region_ss, ss_fit_dict_TOMATO, area_ss_fit_start, area_ss_fit_end = fitting_ss(
+        filename_TOMATO,
+        input_settings,
+        export_data,
+        input_fitting,
+        float(treeview_df['Step end'][len(treeview_df) - 1]),
+        max(Force_Distance_TOMATO[:, 1]),
+        Force_Distance_TOMATO,
+        1,
+        1,
+        der_arr_TOMATO,
+        [],
+        1
+    )
+
+    fit.append(fit_ss)
+    start_force_ss.append(f_fitting_region_ss)
+    start_distance_ss.append(d_fitting_region_ss)
+    export_fit.append(ss_fit_dict_TOMATO)
+    integral_ss_fit_start.append(area_ss_fit_start)
+    integral_ss_fit_end.append(area_ss_fit_end)
+
+    ssLp_variable.set(ss_fit_dict_TOMATO['Lp_ss'])
+    f_off_variable.set(ss_fit_dict_TOMATO['f_offset'])
+    d_off_variable.set(ss_fit_dict_TOMATO["d_offset"])
+    ssLc_variable.set(ss_fit_dict_TOMATO['Lc_ss'])
+    stiff_ss_variable.set(ss_fit_dict_TOMATO['St_ss'])
+
+    tree_results.insert("", "end", iid='{}step{}'.format(timestamp, j + 1), values=(
+        filename_TOMATO,
+        j + 1,
+        Force_Distance_TOMATO[:, 0][real_step_start],
+        f_fitting_region_ss[0],
+        f_fitting_region_ss[0] - Force_Distance_TOMATO[:, 0][real_step_start],
+        Force_Distance_TOMATO[:, 1][real_step_start],
+        d_fitting_region_ss[0],
+        d_fitting_region_ss[0] - Force_Distance_TOMATO[:, 1][real_step_start],
+        '',
+        '',
+        '',
+        ssLc_variable.get(),
+        ssLp_variable.get(),
+        stiff_ss_variable.get(),
+        f_off_variable.get(),
+        d_off_variable.get(),
+        '',
+        ''
+    )
+    )
+
+    work_first_step, kT_1 = calc_integral(
+        TOMATO_area_ds,
+        integral_ss_fit_start[0],
+        Force_Distance_TOMATO[ds_fit_region_end, 1],
+        start_distance_ss[0][0],
+        Force_Distance_TOMATO[ds_fit_region_end, 0],
+        start_force_ss[0][0]
+    )
+
+    tree_results.set('{}step1'.format(timestamp), column='Work [pN*nm]', value=work_first_step)
+    tree_results.set('{}step1'.format(timestamp), column='Work [kT]', value=kT_1)
+
+    if j > 1:
+        for n in range(1, j):
+            work_step_n, kT_n = calc_integral(
+                integral_ss_fit_end[n],
+                integral_ss_fit_start[n - 1],
+                start_distance_ss[n - 1][-1],
+                start_distance_ss[n][0],
+                start_force_ss[n - 1][-1],
+                start_force_ss[n][0]
+            )
+
+            tree_results.set('{}step{}'.format(timestamp, n), column='Work [pN*nm]', value=work_step_n)
+            tree_results.set('{}step{}'.format(timestamp, n), column='Work [kT]', value=kT_n)
+
+    # plot the marked regions and fits
     # model data
-    # distance = np.arange(min(PD_nm), max(PD_nm), 1)
-    F_ss_model = Fit_ss['model'](distance, Fit_ss['fit_model'])
-    # plot the marked region and fitted WLC
-    global TOMATO_fig1
-    global figure1
-    global subplot1
+    F_ss_model = ss_fit_dict_TOMATO['model_ss'](distance, fit_ss)
 
-    if real_start < real_end:
-        real_start_3 = real_start
-        real_end_3 = real_end
-    else:
-        real_start_3 = real_end
-        real_end_3 = real_start
-
-    subplot1.plot(Force_Distance_TOMATO[:, 1][real_start_3:real_end_3], Force_Distance_TOMATO[:, 0][real_start_3:real_end_3], color="r")
+    # plot the marked ss region and fits
+    subplot1.plot(d_fitting_region_ss[:], f_fitting_region_ss, color=diff_colors[j + 1])
     subplot1.plot(distance, F_ss_model, marker=None, linewidth=1, linestyle='dashed', color="black")
 
     subplot1.set_ylim([min(Force_Distance_TOMATO[:, 0]), max(Force_Distance_TOMATO[:, 0])])
     subplot1.set_xlim([min(Force_Distance_TOMATO[:, 1]) - 10, max(Force_Distance_TOMATO[:, 1]) + 10])
+    subplot1.tick_params('both', direction='in')
 
-    TOMATO_fig1 = FigureCanvasTkAgg(figure1, TOMATO_frame)
+    TOMATO_fig1 = FigureCanvasTkAgg(figure1, TOMATO_figure_frame)
     TOMATO_fig1.get_tk_widget().grid(row=0, column=0)
 
-    toolbarFrame = tk.Frame(master=TOMATO_frame)
+    toolbarFrame = tk.Frame(master=TOMATO_figure_frame)
     toolbarFrame.grid(row=2, column=0)
     toolbar = NavigationToolbar2Tk(TOMATO_fig1, toolbarFrame)
 
-    distance_integral = np.arange(float(entryText_start_work_D.get()), float(entryText_end_work_D.get()))
-    ss_integral = Fit_ss['model'](distance_integral, Fit_ss['fit_model'])
-    area_ss = simps(ss_integral) / 4.114
-    entryText_ssWork.set(area_ss)
-    # add the parameters to table
+
+def delete_step():
+    global step_number
+    list_items = tree_steps.get_children("")
+    tree_steps.delete(list_items[-1])
+    step_number -= 1
+
+
+def delete_all_steps():
+    global step_number
+
+    tree_steps.delete(*tree_steps.get_children())
+    step_number = 1
+
+
+def delete_result(event):
+    selected_items = tree_results.selection()
+    for selected_item in selected_items:
+        tree_results.delete(selected_item)
+
+
+def clear_table():
+    global tree_results
+    list_items = tree_results.get_children("")
+
+    for item in list_items:
+        tree_results.delete(item)
+
+
+def clear_table_last():
+    global tree_results
+    list_items = tree_results.get_children("")
+
+    tree_results.delete(list_items[-1])
 
 
 def export_table():
-    global listBox
+    global tree_results
     global name
     global Fit_results
     ''' exporting the table results '''
     results = []
-    for child in listBox.get_children():
-        results.append(listBox.item(child)['values'])
+    for child in tree_results.get_children():
+        results.append(tree_results.item(child)['values'])
 
     Fit_results = pd.DataFrame(results,
                             columns=[
                                 'Filename',
-                                'F1',
-                                'F2',
-                                'F1/2',
-                                'Step start',
-                                'Step end',
-                                'Step length',
-                                'ds Contour length',
-                                'ds Persistance Length',
-                                'ds St',
-                                'ss Contour Length',
-                                'ss Persistance Length',
-                                'ss St',
-                                'Shift F',
-                                'Shift x',
-                                'Work'
+                                'step number',
+                                'Force step start [pN]',
+                                'Force step end [pN]',
+                                'delta force [pN]',
+                                'extension step start [nm]',
+                                'extension step end [nm]',
+                                'Step length [nm]',
+                                'ds contour length',
+                                'ds persistance Length',
+                                'ds stiffness (K0) [pN]',
+                                'ss contour Length',
+                                'ss persistance Length',
+                                'ss stiffness (K0) [pN]',
+                                'Force offset',
+                                'Distance offset',
+                                'Work [pN*nm]',
+                                'Work [kT]'
                             ]
     )
 
     name = filedialog.asksaveasfile(mode='w', defaultextension=".csv")
-    print(name)
     Fit_results.to_csv(name.name, index=False, header=True)
 
 
-def export_model():
-    global listBox
-    global name
-    global Fit_results
-    ''' exporting ds and ss model '''
-    try:
-        F_ss_model
-        model_data = pd.DataFrame(list(zip(distance, F_ds_model, F_ss_model)), columns=['Distance [nm]', 'Force WLC data [pN]', 'Force WLC+FJC data [pN]'])
-    except NameError:
-        model_data = pd.DataFrame(list(zip(distance, F_ds_model)), columns=['Distance [nm]', 'Force WLC data [pN]'])
+def tab_bind(event=None):
+    if tabControl.index(tabControl.select()) == 4:
+        root.bind("<Right>", next_FD_key)
+        root.bind("<d>", next_FD_key)
+        root.bind("<Left>", previous_FD_key)
+        root.bind("<a>", previous_FD_key)
+        root.bind("<s>", start_click_key)
+        root.bind("<e>", end_click_key)
+        root.bind("<Control-s>", save_step_key)
+        root.bind("<f>", start_analysis_key)
+        root.bind("<Delete>", delete_result)
+    else:
+        root.unbind("<Right>")
+        root.unbind("<d>")
+        root.unbind("<Left>")
+        root.unbind("<a>")
+        root.unbind("<s>")
+        root.unbind("<e>")
+        root.unbind("<Control-s>")
+        root.unbind("<f>")
+        root.unbind("<Delete>")
 
-    name = filedialog.asksaveasfile(mode='w', defaultextension=".csv")
-    name_model = name.name[:-4] + '_model_data.csv'
-    model_data.to_csv(name_model, index=False, header=True)
-
-    ''' exporting figure '''
-    plotname = name.name[:-4] + '_graph.png'
-    figure1.savefig(plotname, dpi=600)
-
-
-def zero_str_work():
-    entryText_strWork.set("0")
 ############## TOMATO functions end ###################
 
 
@@ -1152,6 +864,8 @@ if __name__ == '__main__':
     tabControl.add(tab4, text="Constant Force Analysis")
     tabControl.add(tab3, text="Advanced Settings")
     tabControl.add(tab5, text="Manual Analysis - TOMATO")
+    tabControl.pack(expand=4, fill='both')
+    root.bind('<<NotebookTabChanged>>', tab_bind)
 
     """ divide the tab1 into frames """
     # output window
@@ -1163,7 +877,7 @@ if __name__ == '__main__':
         "end",
         "Welcome to POTATO! \n"
         "Please make sure to select the right datatype -----------------------------------------------------------------> \n"
-        "Parameters should be adjusted and validated with <ENTER>.\n"
+        "Parameters should be adjusted prior to analysis.\n"
         "Folders with multiple files can be analysed at once.\n"
     )
 
@@ -1209,21 +923,21 @@ if __name__ == '__main__':
         check_box,
         text="High Frequency (Piezo Distance)",
         variable=check_box_HF,
-        command=lambda: [select_box(check_box_HF, check_box_LF, check_box_CSV), parameters(parameter_frame, default_values_HF, default_values_FIT, default_values_constantF)]
+        command=lambda: [select_box(check_box_HF, check_box_LF, check_box_CSV), parameters(default_values_HF, default_values_FIT, default_values_constantF)]
     ).grid(row=0, column=0, sticky='W')
 
     check_LF = tk.Checkbutton(
         check_box,
         text="Low Frequency",
         variable=check_box_LF,
-        command=lambda: [select_box(check_box_LF, check_box_HF, check_box_CSV), parameters(parameter_frame, default_values_LF, default_values_FIT, default_values_constantF)]
+        command=lambda: [select_box(check_box_LF, check_box_HF, check_box_CSV), parameters(default_values_LF, default_values_FIT, default_values_constantF)]
     ).grid(row=1, column=0, sticky='W')
 
     check_CSV = tk.Checkbutton(
         check_box,
         text="CSV (F(pN) | d)",
         variable=check_box_CSV,
-        command=lambda: [select_box(check_box_CSV, check_box_HF, check_box_LF), parameters(parameter_frame, default_values_CSV, default_values_FIT, default_values_constantF)]
+        command=lambda: [select_box(check_box_CSV, check_box_HF, check_box_LF), parameters(default_values_CSV, default_values_FIT, default_values_constantF)]
     ).grid(row=2, column=0, sticky='W')
 
     check_Trap1 = tk.Checkbutton(
@@ -1280,23 +994,23 @@ if __name__ == '__main__':
     Label_Zscore_F = tk.Label(parameter_frame, text='Z-score force')
     Label_Zscore_D = tk.Label(parameter_frame, text='Z-score distance')
 
-    downsample_value1 = tk.Entry(parameter_frame)
-    downsample_value1.bind("<Return>", lambda event: user_input(event, downsample_value1, downsample_value2))
+    downsample_value = tk.StringVar()
+    downsample_value1 = tk.Entry(parameter_frame, textvariable=downsample_value)
 
-    Filter_degree1 = tk.Entry(parameter_frame)
-    Filter_degree1.bind("<Return>", lambda event: user_input(event, Filter_degree1, Filter_degree2))
+    Filter_degree = tk.StringVar()
+    Filter_degree1 = tk.Entry(parameter_frame, textvariable=Filter_degree)
 
-    Filter_cut_off1 = tk.Entry(parameter_frame)
-    Filter_cut_off1.bind("<Return>", lambda event: user_input(event, Filter_cut_off1, Filter_cut_off2))
+    Filter_cut_off = tk.StringVar()
+    Filter_cut_off1 = tk.Entry(parameter_frame, textvariable=Filter_cut_off)
 
-    Force_Min1 = tk.Entry(parameter_frame)
-    Force_Min1.bind("<Return>", lambda event: user_input(event, Force_Min1, Force_Min2))
+    Force_Min = tk.StringVar()
+    Force_Min1 = tk.Entry(parameter_frame, textvariable=Force_Min)
 
-    Z_score_force1 = tk.Entry(parameter_frame)
-    Z_score_force1.bind("<Return>", lambda event: user_input(event, Z_score_force1, Z_score_force2))
+    Z_score_force = tk.StringVar()
+    Z_score_force1 = tk.Entry(parameter_frame, textvariable=Z_score_force)
 
-    Z_score_distance1 = tk.Entry(parameter_frame)
-    Z_score_distance1.bind("<Return>", lambda event: user_input(event, Z_score_distance1, Z_score_distance2))
+    Z_score_distance = tk.StringVar()
+    Z_score_distance1 = tk.Entry(parameter_frame, textvariable=Z_score_distance)
 
     Cluster_preprocessing.grid(row=0, column=0, padx=2, pady=(20, 2))
     Label_downsample.grid(row=1, column=0, sticky=tk.E + tk.W, padx=2, pady=2)
@@ -1366,7 +1080,7 @@ if __name__ == '__main__':
 
     """organize tab3 """
     frame1 = tk.Frame(tab3, borderwidth=1, relief='ridge')
-    frame1.grid(row=0, column=0)
+    frame1.grid(row=0, column=0, sticky='N')
     frame2 = tk.Frame(tab3, borderwidth=1, relief='ridge')
     frame2.grid(row=0, column=1, sticky='N', padx=(50, 20))
     frame3 = tk.Frame(tab3, borderwidth=1, relief='ridge')
@@ -1387,28 +1101,26 @@ if __name__ == '__main__':
     Label_window_size = tk.Label(frame1, text='Moving median window size')
     Label_STD_difference = tk.Label(frame1, text='SD difference threshold')
 
-    downsample_value2 = tk.Entry(frame1)
-    downsample_value2.bind("<Return>", lambda event: user_input(event, downsample_value2, downsample_value1))
+    # parameters that occur double (tab1 and tab4)
+    downsample_value2 = tk.Entry(frame1, textvariable=downsample_value)
+    Filter_degree2 = tk.Entry(frame1, textvariable=Filter_degree)
+    Filter_cut_off2 = tk.Entry(frame1, textvariable=Filter_cut_off)
+    Force_Min2 = tk.Entry(frame1, textvariable=Force_Min)
+    Z_score_force2 = tk.Entry(frame1, textvariable=Z_score_force)
+    Z_score_distance2 = tk.Entry(frame1, textvariable=Z_score_distance)
 
-    Filter_degree2 = tk.Entry(frame1)
-    Filter_degree2.bind("<Return>", lambda event: user_input(event, Filter_degree2, Filter_degree1))
+    # parameters only in advanced settings
+    step_d_variable = tk.StringVar()
+    step_d_value = tk.Entry(frame1, textvariable=step_d_variable)
 
-    Filter_cut_off2 = tk.Entry(frame1)
-    Filter_cut_off2.bind("<Return>", lambda event: user_input(event, Filter_cut_off2, Filter_cut_off1))
+    window_size_variable = tk.StringVar()
+    window_size_value = tk.Entry(frame1, textvariable=window_size_variable)
 
-    Force_Min2 = tk.Entry(frame1)
-    Force_Min2.bind("<Return>", lambda event: user_input(event, Force_Min2, Force_Min1))
+    STD_difference_variable = tk.StringVar()
+    STD_difference_value = tk.Entry(frame1, textvariable=STD_difference_variable)
 
-    Z_score_force2 = tk.Entry(frame1)
-    Z_score_force2.bind("<Return>", lambda event: user_input(event, Z_score_force2, Z_score_force1))
-
-    Z_score_distance2 = tk.Entry(frame1)
-    Z_score_distance2.bind("<Return>", lambda event: user_input(event, Z_score_distance2, Z_score_distance1))
-
-    step_d_value = tk.Entry(frame1)
-    window_size_value = tk.Entry(frame1)
-    STD_difference_value = tk.Entry(frame1)
-    Frequency_value = tk.Entry(frame1)
+    Frequency_variable = tk.StringVar()
+    Frequency_value = tk.Entry(frame1, textvariable=Frequency_variable)
 
     Cluster_preprocessing.grid(row=0, column=0, padx=2, pady=(20, 2))
     Label_downsample.grid(row=1, column=0, sticky=tk.E + tk.W, padx=2, pady=2)
@@ -1483,42 +1195,60 @@ if __name__ == '__main__':
     ).grid(row=5, column=0, sticky='W')
 
     """ Fitting parameters """
+    # Labels
     Cluster_fitting = tk.Label(frame3, text='FITTING', font='Helvetica 9 bold')
     check_box_WLC = tk.IntVar(value=1)
     check_box_FJC = tk.IntVar(value=0)
-    Label_dsLp = tk.Label(frame3, text='dsLp, nm')
-    Label_dsLp_up = tk.Label(frame3, text='dsLp, upper bound, nm')
-    Label_dsLp_low = tk.Label(frame3, text='dsLp, lower bound, nm')
-    Label_dsLc = tk.Label(frame3, text='dsLc, nm')
-    Label_ssLp = tk.Label(frame3, text='ssLp, nm')
-    Label_ssLc = tk.Label(frame3, text='ssLc, nm')
-    Label_stiffness_ds = tk.Label(frame3, text='dsK0, pN')
-    Label_stiffness_ds_up = tk.Label(frame3, text='dsK0, upper bound, pN')
-    Label_stiffness_ds_low = tk.Label(frame3, text='dsK0, lower bound, pN')
-    Label_stiffness_ss = tk.Label(frame3, text='ssK0, pN')
-    Label_f_offset = tk.Label(frame3, text='Force offset, pN')
-    Label_f_offset_up = tk.Label(frame3, text='Force offset, upper bound, pN')
-    Label_f_offset_low = tk.Label(frame3, text='Force offset, lower bound, pN')
-    Label_d_offset = tk.Label(frame3, text='Distance offset, nm')
-    Label_d_offset_up = tk.Label(frame3, text='Distance offset, upper bound, nm')
-    Label_d_offset_low = tk.Label(frame3, text='Distance offset, lower bound, nm')
+    Label_dsLp = tk.Label(frame3, text='dsLp [nm]')
+    Label_dsLp_up = tk.Label(frame3, text='dsLp upper bound [nm]')
+    Label_dsLp_low = tk.Label(frame3, text='dsLp lower bound [nm]')
+    Label_dsLc = tk.Label(frame3, text='dsLc [nm]')
+    Label_ssLp = tk.Label(frame3, text='ssLp [nm]')
+    Label_ssLc = tk.Label(frame3, text='ssLc [nm]')
+    Label_stiffness_ds = tk.Label(frame3, text='dsK0 [pN]')
+    Label_stiffness_ds_up = tk.Label(frame3, text='dsK0 upper bound [pN]')
+    Label_stiffness_ds_low = tk.Label(frame3, text='dsK0 lower bound [pN]')
+    Label_stiffness_ss = tk.Label(frame3, text='ssK0 [pN]')
+    Label_f_offset = tk.Label(frame3, text='Force offset [pN]')
+    Label_f_offset_up = tk.Label(frame3, text='Force offset upper bound [pN]')
+    Label_f_offset_low = tk.Label(frame3, text='Force offset lower bound [pN]')
+    Label_d_offset = tk.Label(frame3, text='Distance offset [nm]')
+    Label_d_offset_up = tk.Label(frame3, text='Distance offset upper bound [nm]')
+    Label_d_offset_low = tk.Label(frame3, text='Distance offset lower bound [nm]')
 
-    dsLp = tk.Entry(frame3)
-    dsLp_up = tk.Entry(frame3)
-    dsLp_low = tk.Entry(frame3)
-    dsLc = tk.Entry(frame3)
-    ssLp = tk.Entry(frame3)
-    ssLc = tk.Entry(frame3)
-    stiff_ds = tk.Entry(frame3)
-    stiff_ds_up = tk.Entry(frame3)
-    stiff_ds_low = tk.Entry(frame3)
-    stiff_ss = tk.Entry(frame3)
-    f_off = tk.Entry(frame3)
-    f_off_up = tk.Entry(frame3)
-    f_off_low = tk.Entry(frame3)
-    d_off = tk.Entry(frame3)
-    d_off_up = tk.Entry(frame3)
-    d_off_low = tk.Entry(frame3)
+    # Entry widgets
+    dsLp_variable = tk.StringVar()
+    dsLp = tk.Entry(frame3, textvariable=dsLp_variable)
+    dsLp_up_variable = tk.StringVar()
+    dsLp_up = tk.Entry(frame3, textvariable=dsLp_up_variable)
+    dsLp_low_variable = tk.StringVar()
+    dsLp_low = tk.Entry(frame3, textvariable=dsLp_low_variable)
+    dsLc_variable = tk.StringVar()
+    dsLc = tk.Entry(frame3, textvariable=dsLc_variable)
+    ssLp_variable = tk.StringVar()
+    ssLp = tk.Entry(frame3, textvariable=ssLp_variable)
+    ssLc_variable = tk.StringVar()
+    ssLc = tk.Entry(frame3, textvariable=ssLc_variable)
+    stiff_ds_variable = tk.StringVar()
+    stiff_ds = tk.Entry(frame3, textvariable=stiff_ds_variable)
+    stiff_ds_up_variable = tk.StringVar()
+    stiff_ds_up = tk.Entry(frame3, textvariable=stiff_ds_up_variable)
+    stiff_ds_low_variable = tk.StringVar()
+    stiff_ds_low = tk.Entry(frame3, textvariable=stiff_ds_low_variable)
+    stiff_ss_variable = tk.StringVar()
+    stiff_ss = tk.Entry(frame3, textvariable=stiff_ss_variable)
+    f_off_variable = tk.StringVar()
+    f_off = tk.Entry(frame3, textvariable=f_off_variable)
+    f_off_up_variable = tk.StringVar()
+    f_off_up = tk.Entry(frame3, textvariable=f_off_up_variable)
+    f_off_low_variable = tk.StringVar()
+    f_off_low = tk.Entry(frame3, textvariable=f_off_low_variable)
+    d_off_variable = tk.StringVar()
+    d_off = tk.Entry(frame3, textvariable=d_off_variable)
+    d_off_up_variable = tk.StringVar()
+    d_off_up = tk.Entry(frame3, textvariable=d_off_up_variable)
+    d_off_low_variable = tk.StringVar()
+    d_off_low = tk.Entry(frame3, textvariable=d_off_low_variable)
 
     Cluster_fitting.grid(row=0, column=0, padx=20, pady=20)
 
@@ -1673,348 +1403,159 @@ if __name__ == '__main__':
     amplitude_gauss.grid(row=9, column=1, sticky=tk.E + tk.W, padx=2, pady=2)
 
     """organize tab5 ---- TOMATO"""
-    tab5.columnconfigure([0, 1], weight=1, minsize=75)
-    tab5.rowconfigure(0, weight=1, minsize=50)
+    TOMATO_figure_frame = tk.Canvas(tab5, height=650, width=1000, borderwidth=1, relief='ridge')
+    TOMATO_figure_frame.grid(row=0, column=0, rowspan=2)
 
-    canvas1 = tk.Canvas(tab5, width=650, height=700)
-    canvas1.grid(row=0, column=1)
+    TOMATO_button_frame = tk.Frame(tab5)
+    TOMATO_button_frame.grid(row=0, column=1, sticky=tk.N + tk.W)
 
-    canvas2 = tk.Canvas(tab5, width=650, height=100)
-    canvas2.grid(row=1, column=1)
+    TOMATO_parameter_frame = tk.Frame(tab5, borderwidth=1, relief='ridge')
+    TOMATO_parameter_frame.grid(row=1, column=1, sticky=tk.N + tk.W)
 
-    TOMATO_frame = tk.Frame(tab5, width=500, height=700)
-    TOMATO_frame.grid(row=0, column=0)
+    TOMATO_frame_table = tk.Frame(tab5, width=400, height=100)
+    TOMATO_frame_table.grid(row=2, column=0)
 
-    canvas_name = tk.Canvas(tab5, width=400, height=50)
-    canvas_name.grid(row=1, column=0)
+    ### create entry widgets ###
+    # shift in distance
+    label_shift_d = tk.Label(TOMATO_parameter_frame, text='Distance offset [nm]')
+    label_shift_d.grid(row=0, column=0, sticky=tk.E + tk.W, padx=(4, 2), pady=2)
+    entry_shift_d = tk.Entry(TOMATO_parameter_frame, textvariable=d_off_variable).grid(row=0, column=1)
 
-    frame_table = tk.Frame(tab5, width=400, height=100)
-    frame_table.grid(row=2, column=0)
-
-    label_shift_d = tk.Label(tab5, text='Shift x [nm]')
-    label_shift_d.config(font=('Arial', 10))
-    canvas1.create_window(100, 160, window=label_shift_d)
-
-    entryText_shift_d = tk.StringVar()
-    entry_shift_d = tk.Entry(tab5, textvariable=entryText_shift_d)
-    canvas1.create_window(100, 180, window=entry_shift_d)
-    entryText_shift_d.set("0")
+    # shift in F
+    label_shift_F = tk.Label(TOMATO_parameter_frame, text='Force offset [pN]')
+    label_shift_F.grid(row=0, column=2, sticky=tk.E + tk.W, padx=(4, 2), pady=2)
+    entry_shift_F = tk.Entry(TOMATO_parameter_frame, textvariable=f_off_variable).grid(row=0, column=3)
 
     # K0 for both
     # ds
-    label_ds_St = tk.Label(tab5, text='K0 ds (St)')
-    label_ds_St.config(font=('Arial', 10))
-    canvas1.create_window(100, 200, window=label_ds_St)
-
-    entryText_ds_St = tk.StringVar()
-    entry_ds_St = tk.Entry(tab5, textvariable=entryText_ds_St)
-    canvas1.create_window(100, 220, window=entry_ds_St)
-    entryText_ds_St.set("450")
+    label_ds_St = tk.Label(TOMATO_parameter_frame, text='dsK0 [pN]')
+    label_ds_St.grid(row=1, column=0, sticky=tk.E + tk.W, padx=(4, 2), pady=2)
+    entry_ds_St = tk.Entry(TOMATO_parameter_frame, textvariable=stiff_ds_variable).grid(row=1, column=1)
 
     # ss
-    label_ss_St = tk.Label(tab5, text='K0 ss (St)')
-    label_ss_St.config(font=('Arial', 10))
-    canvas1.create_window(300, 200, window=label_ss_St)
-
-    entryText_ss_St = tk.StringVar()
-    entry_ss_St = tk.Entry(tab5, textvariable=entryText_ss_St)
-    canvas1.create_window(300, 220, window=entry_ss_St)
-    entryText_ss_St.set("800")
-
-    # shift in F
-    label_shift_F = tk.Label(tab5, text='shift F [pN]')
-    label_shift_F.config(font=('Arial', 10))
-    canvas1.create_window(300, 160, window=label_shift_F)
-
-    entryText_shift_F = tk.StringVar()
-    entry_shift_F = tk.Entry(tab5, textvariable=entryText_shift_F)
-    canvas1.create_window(300, 180, window=entry_shift_F)
-    entryText_shift_F.set("0")
+    label_ss_St = tk.Label(TOMATO_parameter_frame, text='ssK0 [pN]')
+    label_ss_St.grid(row=1, column=2, sticky=tk.E + tk.W, padx=(4, 2), pady=2)
+    entry_ss_St = tk.Entry(TOMATO_parameter_frame, textvariable=stiff_ss_variable).grid(row=1, column=3)
 
     ## ds handle part
     # ds handle persistance length
-    label_ds_Lp = tk.Label(tab5, text='dsHandles Lp [nm]')
-    label_ds_Lp.config(font=('Arial', 10))
-    canvas1.create_window(100, 240, window=label_ds_Lp)
-
-    entryText_ds_Lp = tk.StringVar()
-    entry_ds_Lp = tk.Entry(tab5, textvariable=entryText_ds_Lp)
-    canvas1.create_window(100, 260, window=entry_ds_Lp)
-    entryText_ds_Lp.set("40")
+    label_ds_Lp = tk.Label(TOMATO_parameter_frame, text='dsLp [nm]')
+    label_ds_Lp.grid(row=2, column=0, sticky=tk.E + tk.W, padx=(4, 2), pady=2)
+    entry_ds_Lp = tk.Entry(TOMATO_parameter_frame, textvariable=dsLp_variable).grid(row=2, column=1)
 
     # ds handle  contour length
-
-    label_ds_Lc = tk.Label(tab5, text='dsHandles Lc [nm]')
-    label_ds_Lc.config(font=('Arial', 10))
-    canvas1.create_window(100, 290, window=label_ds_Lc)
-
-    entryText_ds_Lc = tk.StringVar()
-    entry_ds_Lc = tk.Entry(tab5, textvariable=entryText_ds_Lc)
-    canvas1.create_window(100, 310, window=entry_ds_Lc)
-    entryText_ds_Lc.set("1256")
+    label_ds_Lc = tk.Label(TOMATO_parameter_frame, text='dsLc [nm]')
+    label_ds_Lc.grid(row=3, column=0, sticky=tk.E + tk.W, padx=(4, 2), pady=2)
+    entry_ds_Lc = tk.Entry(TOMATO_parameter_frame, textvariable=dsLc_variable).grid(row=3, column=1)
 
     ## ss RNA part
     # ss RNA persistance length
-    label_ss_Lp = tk.Label(tab5, text=' ssRNA Lp [nm]')
-    label_ss_Lp.config(font=('Arial', 10))
-    canvas1.create_window(300, 240, window=label_ss_Lp)
-
-    entryText_ss_Lp = tk.StringVar()
-    entry_ss_Lp = tk.Entry(tab5, textvariable=entryText_ss_Lp)
-    canvas1.create_window(300, 260, window=entry_ss_Lp)
-    entryText_ss_Lp.set("1")
+    label_ss_Lp = tk.Label(TOMATO_parameter_frame, text=' ssLp [nm]')
+    label_ss_Lp.grid(row=2, column=2, sticky=tk.E + tk.W, padx=(4, 2), pady=2)
+    entry_ss_Lp = tk.Entry(TOMATO_parameter_frame, textvariable=ssLp_variable).grid(row=2, column=3)
 
     # ss RNA contour length
-    label_ss_Lc = tk.Label(tab5, text=' ssRNA Lc [nm]')
-    label_ss_Lc.config(font=('Arial', 10))
-    canvas1.create_window(300, 290, window=label_ss_Lc)
-
-    entryText_ss_Lc = tk.StringVar()
-    entry_ss_Lc = tk.Entry(tab5, textvariable=entryText_ss_Lc)
-    canvas1.create_window(300, 310, window=entry_ss_Lc)
-    entryText_ss_Lc.set("0")
-
-    # work done
-    # ds work done
-    label_dsWork = tk.Label(tab5, text='ds Work done [KbT]')
-    label_dsWork.config(font=('Arial', 10))
-    canvas1.create_window(520, 160, window=label_dsWork)
-
-    entryText_dsWork = tk.StringVar()
-    entry_dsWork = tk.Entry(tab5, textvariable=entryText_dsWork)
-    canvas1.create_window(520, 180, window=entry_dsWork)
-    entryText_dsWork.set("0")
-
-    # ss work done
-    label_ssWork = tk.Label(tab5, text='ss Work done [KbT]')
-    label_ssWork.config(font=('Arial', 10))
-    canvas1.create_window(520, 200, window=label_ssWork)
-
-    entryText_ssWork = tk.StringVar()
-    entry_ssWork = tk.Entry(tab5, textvariable=entryText_ssWork)
-    canvas1.create_window(520, 220, window=entry_ssWork)
-    entryText_ssWork.set("0")
-
-    # rectangle work done
-    label_rWork = tk.Label(tab5, text='rect. Work done [KbT]')
-    label_rWork.config(font=('Arial', 10))
-    canvas1.create_window(520, 240, window=label_rWork)
-
-    entryText_rWork = tk.StringVar()
-    entry_rWork = tk.Entry(tab5, textvariable=entryText_rWork)
-    canvas1.create_window(520, 260, window=entry_rWork)
-    entryText_rWork.set("0")
-
-    #  work done by structure
-
-    label_strWork = tk.Label(tab5, text='str. Work done [KbT]')
-    label_strWork.config(font=('Arial', 10))
-    canvas1.create_window(520, 290, window=label_strWork)
-
-    entryText_strWork = tk.StringVar()
-    entry_strWork = tk.Entry(tab5, textvariable=entryText_strWork)
-    canvas1.create_window(520, 310, window=entry_strWork)
-    entryText_strWork.set("0")
+    label_ss_Lc = tk.Label(TOMATO_parameter_frame, text=' ssLc [nm]')
+    label_ss_Lc.grid(row=3, column=2, sticky=tk.E + tk.W, padx=(4, 2), pady=2)
+    entry_ss_Lc = tk.Entry(TOMATO_parameter_frame, textvariable=ssLc_variable).grid(row=3, column=3)
 
     # start position
-    entryText_start = tk.StringVar()
-    entry_start = tk.Entry(tab5, textvariable=entryText_start)
-    canvas1.create_window(250, 350, window=entry_start, width=50, height=20)
+    label_strF = tk.Label(TOMATO_parameter_frame, text='Force [pN]')
+    label_strF.grid(row=4, column=1, sticky=tk.E + tk.W, pady=(25, 0))
+
+    label_strD = tk.Label(TOMATO_parameter_frame, text='Distance [nm]')
+    label_strD.grid(row=4, column=2, sticky=tk.E + tk.W, pady=(25, 0))
+
+    entryText_startF = tk.StringVar()
+    entry_startF = tk.Entry(TOMATO_parameter_frame, textvariable=entryText_startF).grid(row=5, column=1, pady=2)
+
+    entryText_startD = tk.StringVar()
+    entry_startD = tk.Entry(TOMATO_parameter_frame, textvariable=entryText_startD).grid(row=5, column=2, pady=2)
 
     # end position
-    entryText_end = tk.StringVar()
-    entry_end = tk.Entry(tab5, textvariable=entryText_end)
-    canvas1.create_window(250, 390, window=entry_end, width=50, height=20)
 
-    ## Work start
-    # start position
-    label_start_work_D = tk.Label(tab5, text='D')
-    label_start_work_D.config(font=('Arial', 10))
-    canvas1.create_window(500, 330, window=label_start_work_D)
+    entryText_endF = tk.StringVar()
+    entry_endF = tk.Entry(TOMATO_parameter_frame, textvariable=entryText_endF).grid(row=6, column=1, pady=2)
 
-    entryText_start_work_D = tk.StringVar()
-    entry_start_work_D = tk.Entry(tab5, textvariable=entryText_start_work_D)
-    canvas1.create_window(500, 350, window=entry_start_work_D, width=50, height=20)
-    entryText_start_work_D.set('0')
-
-    label_start_work_F = tk.Label(tab5, text='F')
-    label_start_work_F.config(font=('Arial', 10))
-    canvas1.create_window(550, 330, window=label_start_work_F)
-
-    entryText_start_work_F = tk.StringVar()
-    entry_start_work_F = tk.Entry(tab5, textvariable=entryText_start_work_F)
-    canvas1.create_window(550, 350, window=entry_start_work_F, width=50, height=20)
-    entryText_start_work_F.set('0')
-
-    ## work end
-    # end positio
-    label_start_work_D = tk.Label(tab5, text='D')
-    label_start_work_D.config(font=('Arial', 10))
-    canvas1.create_window(500, 390, window=label_start_work_D)
-
-    entryText_end_work_D = tk.StringVar()
-    entry_end_work_D = tk.Entry(tab5, textvariable=entryText_end_work_D)
-    canvas1.create_window(500, 390, window=entry_end_work_D, width=50, height=20)
-    entryText_end_work_D.set('0')
-
-    label_start_work_F = tk.Label(tab5, text='F')
-    label_start_work_F.config(font=('Arial', 10))
-    canvas1.create_window(550, 390, window=label_start_work_F)
-
-    entryText_end_work_F = tk.StringVar()
-    entry_end_work_F = tk.Entry(tab5, textvariable=entryText_end_work_F)
-    canvas1.create_window(550, 390, window=entry_end_work_F, width=50, height=20)
-    entryText_end_work_F.set('0')
+    entryText_endD = tk.StringVar()
+    entry_endD = tk.Entry(TOMATO_parameter_frame, textvariable=entryText_endD).grid(row=6, column=2, pady=2)
 
     entryText_filename = tk.StringVar()
-    entry_filename = tk.Entry(tab5, textvariable=entryText_filename)
-    canvas_name.create_window(200, 30, window=entry_filename, width=800, height=30)
+    entry_filename = tk.Entry(TOMATO_frame_table, textvariable=entryText_filename, width=100)
+    entry_filename.grid(row=0, column=0)
 
-    ## shortcut descriptions
-    label_shortcut = tk.Label(tab5, text='Keyboard shortcuts:')
-    label_shortcut.config(font=('Arial', 10))
-    canvas1.create_window(100, 650, window=label_shortcut)
+    # create button widgets that use the defined functions
+    browseButton_folder = tk.Button(TOMATO_button_frame, text="      Choose folder     ", command=open_folder, bg='green', fg='white', font=('Arial', 11, 'bold'))
+    browseButton_folder.grid(row=0, column=0, padx=4, pady=4)
 
-    label_shortcut_arrows = tk.Label(tab5, text='Left/right/a/d arrow - switching between curves')
-    label_shortcut_arrows.config(font=('Arial', 10))
-    canvas1.create_window(180, 680, window=label_shortcut_arrows)
+    button_save = tk.Button(TOMATO_button_frame, text='Save results table', command=export_table, bg='palegreen2', font=('Arial', 11, 'bold'))
+    button_save.grid(row=1, column=0, padx=4, pady=4)
 
-    label_shortcut_save = tk.Label(tab5, text='Enter or Shift_L - Save')
-    label_shortcut_save.config(font=('Arial', 10))
-    canvas1.create_window(105, 710, window=label_shortcut_save)
+    button_reset_parameters = tk.Button(TOMATO_button_frame, text='Reset parameters', command=lambda: parameters(0, default_values_FIT, default_values_constantF) if check_box_HF == 1 else (parameters(default_values_HF, default_values_FIT, default_values_constantF) if check_box_LF == 1 else parameters(default_values_CSV, default_values_FIT, default_values_constantF)), bg='palegreen2', font=('Arial', 11, 'bold'))
+    button_reset_parameters.grid(row=1, column=1, padx=4, pady=4)
 
-    label_shortcut_start = tk.Label(tab5, text='s - fit start')
-    label_shortcut_start.config(font=('Arial', 10))
-    canvas2.create_window(60, 30, window=label_shortcut_start)
+    label_info = tk.Label(TOMATO_button_frame, text='TOMATO is unresponsive during fitting, please be patient\n\nmark step start <s>\n mark step end <e>\n save marked step <Ctrl+s>\n start analysis <f>\n delete results line <mark+del>\n next curve <Right arrow> or <d>\n previous curve <Left arrow> or <a>')
+    label_info.grid(row=2, column=0, padx=4, pady=4)
 
-    label_shortcut_end = tk.Label(tab5, text='e - fit end')
-    label_shortcut_end.config(font=('Arial', 10))
-    canvas2.create_window(60, 55, window=label_shortcut_end)
+    button_start = tk.Button(TOMATO_parameter_frame, text='Set start', command=start_click, bg='lightsteelblue2', font=('Arial', 10, 'bold'))
+    button_start.grid(row=5, column=0, pady=2)
 
-    label_shortcut_work_start = tk.Label(tab5, text='space+s - work start')
-    label_shortcut_work_start.config(font=('Arial', 10))
-    canvas2.create_window(290, 30, window=label_shortcut_work_start)
+    button_end = tk.Button(TOMATO_parameter_frame, text='Set end', command=end_click, bg='lightsteelblue2', font=('Arial', 10, 'bold'))
+    button_end.grid(row=6, column=0, pady=2)
 
-    label_shortcut_work_end = tk.Label(tab5, text='space+e - work end')
-    label_shortcut_work_end.config(font=('Arial', 10))
-    canvas2.create_window(290, 55, window=label_shortcut_work_end)
+    step_number = 1
+    button_save_step = tk.Button(TOMATO_parameter_frame, text='Save step', command=save_step, bg='lightsteelblue2', font=('Arial', 10, 'bold'))
+    button_save_step.grid(row=7, column=0, pady=2)
 
-    label_shortcut_zero = tk.Label(tab5, text='o or ;/° - zero str work')
-    label_shortcut_zero.config(font=('Arial', 10))
-    canvas2.create_window(105, 80, window=label_shortcut_zero)
+    button_delete_step = tk.Button(TOMATO_parameter_frame, text='Delete step', command=delete_step, bg='lightsteelblue2', font=('Arial', 10, 'bold'))
+    button_delete_step.grid(row=8, column=0, pady=2)
 
-    label_shortcut_fit_ds = tk.Label(tab5, text='space+f - fit ds')
-    label_shortcut_fit_ds.config(font=('Arial', 10))
-    canvas2.create_window(80, 105, window=label_shortcut_fit_ds)
-
-    label_shortcut_fit_ss = tk.Label(tab5, text='space+g - fit ss')
-    label_shortcut_fit_ss.config(font=('Arial', 10))
-    canvas2.create_window(270, 105, window=label_shortcut_fit_ss)
-
-    label_shortcut_rWork = tk.Label(tab5, text='r - rWork')
-    label_shortcut_rWork.config(font=('Arial', 10))
-    canvas2.create_window(450, 30, window=label_shortcut_rWork)
-
-    label_shortcut_start = tk.Label(tab5, text='t - strWork')
-    label_shortcut_start.config(font=('Arial', 10))
-    canvas2.create_window(455, 55, window=label_shortcut_start)
-
-    ## create button widgets that use the defined functions
-    browseButton_CSV = tk.Button(tab5, text="      Choose folder     ", command=open_folder, bg='green', fg='white', font=('Arial', 11, 'bold'))
-    canvas1.create_window(200, 50, window=browseButton_CSV)
-
-    button_create = tk.Button(tab5, text=' Create Charts ', command=create_chart, bg='palegreen2', font=('Arial', 11, 'bold'))
-    canvas1.create_window(200, 90, window=button_create)
-
-    button_clear = tk.Button(tab5, text='  Clear Charts  ', command=clear_charts, bg='lightskyblue2', font=('Arial', 11, 'bold'))
-    canvas1.create_window(200, 130, window=button_clear)
-
-    button_start = tk.Button(tab5, text='Set start', command=start_click, bg='lightsteelblue2', font=('Arial', 11, 'bold'))
-    canvas1.create_window(150, 350, window=button_start)
-
-    button_end = tk.Button(tab5, text='Set end', command=end_click, bg='lightsteelblue2', font=('Arial', 11, 'bold'))
-    canvas1.create_window(150, 390, window=button_end)
-
-    button_fit_Lp_shift_x = tk.Button(tab5, text='Fit ds Lp & shift_x', command=Fitting_WLC_ds_handles, bg='PeachPuff', font=('Arial', 10, 'bold'))
-    canvas1.create_window(100, 450, window=button_fit_Lp_shift_x, width=150)
-
-    button_fit_Lc = tk.Button(tab5, text='Fit ss Lc', command=Fitting_WLC_ss_handles, bg='PeachPuff', font=('Arial', 10, 'bold'))
-    canvas1.create_window(300, 450, window=button_fit_Lc, width=90)
-
-    button_export = tk.Button(tab5, text='Export', command=export_table, bg='palegreen2', font=('Arial', 14, 'bold'))
-    canvas1.create_window(100, 550, window=button_export)
-
-    button_clear_last = tk.Button(tab5, text='Delete last', command=clear_table_last, bg='red', font=('Arial', 10, 'bold'))
-    canvas1.create_window(250, 520, window=button_clear_last)
-
-    button_clear_table = tk.Button(tab5, text='Delete all', command=clear_table, bg='red', font=('Arial', 10, 'bold'))
-    canvas1.create_window(250, 600, window=button_clear_table)
-
-    button_reset_parameters = tk.Button(tab5, text='Reset prmtrs', command=reset_parameters, bg='PeachPuff', font=('Arial', 10, 'bold'))
-    canvas1.create_window(400, 100, window=button_reset_parameters)
-
-    button_start_work = tk.Button(tab5, text='Set W start', command=start_work_click, bg='lightsteelblue2', font=('Arial', 11, 'bold'))
-    canvas1.create_window(400, 350, window=button_start_work)
-
-    button_end_work = tk.Button(tab5, text='Set W end', command=end_work_click, bg='lightsteelblue2', font=('Arial', 11, 'bold'))
-    canvas1.create_window(400, 390, window=button_end_work)
-
-    button_rWork = tk.Button(tab5, text='rWork', command=calc_rWork, bg='PeachPuff', font=('Arial', 10, 'bold'))
-    canvas1.create_window(500, 450, window=button_rWork, width=90)
-
-    button_rWork = tk.Button(tab5, text='rWork', command=calc_rWork, bg='PeachPuff', font=('Arial', 10, 'bold'))
-    canvas1.create_window(500, 450, window=button_rWork, width=90)
-
-    button_strWork = tk.Button(tab5, text='strWork', command=calc_strWork, bg='PeachPuff', font=('Arial', 10, 'bold'))
-    canvas1.create_window(500, 500, window=button_strWork, width=90)
-
-    button_next_FD = tk.Button(tab5, text='Next FD >', command=lambda: change_FD(1), bg='lightsteelblue2', font=('Arial', 10, 'bold'))
-    canvas1.create_window(500, 50, window=button_next_FD, width=90)
-
-    root.bind("<Right>", next_FD_key)
-    root.bind("<d>", next_FD_key)
-    root.bind("<Left>", previous_FD_key)
-    root.bind("<a>", previous_FD_key)
-    root.bind("<Return>", save_key)
-    root.bind("<Shift_L>", save_key)
-    root.bind("<s>", start_click_key)
-    root.bind("<e>", end_click_key)
-    root.bind("<space><s>", start_work_click_key)
-    root.bind("<space><e>", end_work_click_key)
-    root.bind("<o>", zero_str_work_key)
-    root.bind("<;>", zero_str_work_key)
-    root.bind("<space><f>", fit_ds_key)
-    root.bind("<space><g>", fit_ss_key)
-    root.bind("<r>", calc_rWork_key)
-    root.bind("<t>", calc_strWork_key)
-    root.bind("<Control-z>", load_previous_data_key)
-
-    button_previous_FD = tk.Button(tab5, text='< Prev. FD', command=lambda: change_FD(-1), bg='lightsteelblue2', font=('Arial', 10, 'bold'))
-    canvas1.create_window(400, 50, window=button_previous_FD, width=90)
-
-    button_save = tk.Button(tab5, text='Save', command=write_to_table, bg='palegreen2', font=('Arial', 14, 'bold'))
-    canvas1.create_window(400, 500, window=button_save, width=90)
-
-    button_export = tk.Button(tab5, text='Export model', command=export_model, bg='palegreen2', font=('Arial', 10, 'bold'))
-    canvas1.create_window(100, 600, window=button_export)
-
-    button_zero = tk.Button(tab5, text='0', command=zero_str_work, bg='palegreen2', font=('Arial', 14, 'bold'))
-    canvas1.create_window(620, 300, window=button_zero, width=30)
+    button_start_analysis = tk.Button(TOMATO_parameter_frame, text='Analyze curve', command=analyze_steps, bg='#df4c4c', font=('Arial', 10, 'bold'))
+    button_start_analysis.grid(row=7, column=1, rowspan=2, pady=2)
 
     ## show the fitting parameters in a table
-    # create Treeview with 3 columns
-    cols = ('Filename', 'F1', 'F2', 'F1/2', 'Step start', 'Step end', 'Step length', 'ds Lc', 'ds Lp', 'ds St', 'ss Lc', 'ss Lp', 'ss St', 'Shift F', 'Shift x', 'Work')
-    listBox = ttk.Treeview(frame_table, columns=cols, show='headings', height=5)
+    # create Treeview for results table
+    cols = (
+        'Filename',
+        'step number',
+        'Force step start [pN]',
+        'Force step end [pN]',
+        'delta force [pN]',
+        'extension step start [nm]',
+        'extension step end [nm]',
+        'Step length [nm]',
+        'ds contour length',
+        'ds persistance Length',
+        'ds stiffness (K0) [pN]',
+        'ss contour Length',
+        'ss persistance Length',
+        'ss stiffness (K0) [pN]',
+        'Force offset',
+        'Distance offset',
+        'Work [pN*nm]',
+        'Work [kT]'
+    )
+
+    tree_results = ttk.Treeview(TOMATO_frame_table, columns=cols, show='headings', height=5)
     # set column headings
     for col in cols:
-        listBox.heading(col, text=col)
-        listBox.column(col, minwidth=0, width=65)
-    listBox.grid(row=1, column=0, columnspan=1, padx=5, pady=5)
+        tree_results.heading(col, text=col)
+        tree_results.column(col, minwidth=25, width=65)
+    tree_results.grid(row=1, column=0, padx=5, pady=5)
+
+    # create Treeview for the steps to analyze
+    cols_steps = ('Step number', 'F start', 'F end', 'Step start', 'Step end')
+    tree_steps = ttk.Treeview(TOMATO_parameter_frame, columns=cols_steps, show='headings', height=5)
+    # set column headings
+    for col in cols_steps:
+        tree_steps.heading(col, text=col)
+        tree_steps.column(col, minwidth=25, width=65)
+    tree_steps.grid(row=9, column=0, columnspan=2, pady=5)
     ######### TOMATO end ############
 
     ############ POTATO last part ###############
     # put default values into the widgets
-    parameters(parameter_frame, default_values_HF, default_values_FIT, default_values_constantF)
+    parameters(default_values_HF, default_values_FIT, default_values_constantF)
 
     # loop ensuring the GUI is running until closed
     root.protocol("WM_DELETE_WINDOW", on_closing)
