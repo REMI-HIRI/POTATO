@@ -64,7 +64,7 @@ For each analysis step, buttons are displayed in the different tabs and some of 
 
 ![folder analysis](https://user-images.githubusercontent.com/59534208/173094052-7a879aef-3c05-421f-b4b0-56cee839e212.png)
 
-
+In this tab, all force ramp experimental files in the specified folder will be analyzed automatically.
 
 **Input**
 
@@ -75,10 +75,10 @@ ATTENTION: When changing between input formats, all parameters are reset to the 
 1) High frequency (Piezo Distance):
       Analyses the high frequency data (Piezo tracking) of all h5 files in a given directory.
       The data gathering frequency is derived directly out of the h5 files.
-2) Low Frequency
+2) Low Frequency:
       Analyses the low frequency data of all h5 files in a given directory.
       The data gathering frequency is calculated directly out of the h5 files.
-3) CSV (F/D)
+3) CSV (F/D):
       Analyses all csv files in a given directory.
       The architecture of these files need to consist out of two columns (Force and Distance) without headers.
       Force needs to be in pN. Distance can be either be in µm or nm.
@@ -90,7 +90,6 @@ ATTENTION: When changing between input formats, all parameters are reset to the 
 
 Parameters can be changed directly in the Graphical User Interface (GUI).
 For more setting options refer to the "Advanced Settings" tab, which includes all adjustable parameters.
-Upon changing, each parameter needs to be validated with the <ENTER> key.
 When the parameters are optimized, default parameters can be changed in the POTATO_config file,
 so they will be loaded when the GUI is started.
 The parameters are read in once the analysis starts and for the force-ramp analysis the used parameters are exported in json format.
@@ -103,16 +102,16 @@ The parameters are read in once the analysis starts and for the force-ramp analy
 1) Processed FD data:
       Exports the down-sampled and filtered Force-Distance-Array in CSV format.
       The exported filename consists of the original filename and additional suffix "_smooth".
-2) Plot
+2) Plot:
       Exports a figure (PNG) containing - the visualized processed data with and without marked unfolding events
                                         - the corresponding force- and distance derivatives
-3) Steps found
+3) Steps found:
       Exports the identified steps for each curve into a separate CSV file.
       The step length does NOT correspond to the contour length change, but is only the distance difference between step start and step end.
-4) Fitting
+4) Fitting:
       Exports a plot with the fitted models and a table of the fitting parameters for each section in CSV format.
       When 'Fitting' is not selected, the script skips all fitting steps and therefore the analysis is much faster.
-4) Total results
+4) Total results:
       Exports all found steps for all analysed files to a single CSV file.
 
 
@@ -234,13 +233,17 @@ Fitting 		- Exports a plot with the fitted models and a table of the fitting par
   ![manual_analysis](https://user-images.githubusercontent.com/59534208/173094184-fc798760-e41e-48e2-941b-8e5cb9fc3079.png)
 
   
-This tab allows user to perform manual analysis of the FD curves. TOMATO uses the same input parameters as POTATO
-  
-1) User has to manually mark the start and end of each (un)folding step 
-	- press "s" or click on "step start" button --> click on the position of start of a step
-	- press "e" or click on "step end" butto --> click on the position of end of the same step
-	- press "enter" or click on "save" button to save marked step coordinates
-	repeat until all steps are marked
-	- if a mistake occurs during the marking, the last saved value can be removed by "delete"
-2) Click on "start analysis" 
-	TOMATO proceeds with step coordinates input and performes the rest analysis as done by POTATO (fitting + work calculations)
+This tab allows user to perform manual analysis of the FD curves. TOMATO uses the same input parameters as POTATO.
+1) Choose the folder containing the curves to analyse with the "Choose folder" button. Attention the file format and preprocessing values are set in the "Analysis folder" tab.
+	
+2) Manually mark the start and end of each (un)folding step: 
+	- press "s" or click on "Set start" button --> click on the position of start of a step
+	- press "e" or click on "Set end" button --> click on the position of end of the same step
+	- press "ctrl+s" or click on "Save step" button to save marked step coordinates
+	repeat until all steps are marked. Attention, the steps have to be marked in the correct order from the "lowest" to the "highest" step.
+	- if a mistake occurs during the marking, the last saved value can be removed by the "Delete step" button.
+3) Click on "Analyze curve" 
+	TOMATO proceeds with step coordinates input and performes the rest analysis as done by POTATO (fitting + work calculations). This may take some time during which the GUI is unresponsive.
+	The relevant parameters are loaded into the table below the figure. The column width can be adjusted to see the parameter labels.
+4) Switch to the next curve of the folder with the arrow keys (left, right) or press "a" or "d". The "step table" will be reseted. Analysis is performed as explained above and the parameters are added to the "results table". 
+5) When all curves are manually analysed, the results table can be saved as csv file with the "Save results table" button.
