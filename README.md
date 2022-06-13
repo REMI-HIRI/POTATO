@@ -62,7 +62,7 @@ For each analysis step, buttons are displayed in the different tabs and some of 
 
 ***Folder Analysis***
 
-![folder analysis](https://user-images.githubusercontent.com/59534208/173094052-7a879aef-3c05-421f-b4b0-56cee839e212.png)
+![Tab1_new](https://user-images.githubusercontent.com/77443646/173436207-22c95571-02ff-41bd-a85a-487b9c9b8078.PNG)
 
 In this tab, all force ramp experimental files in the specified folder will be analyzed automatically.
 
@@ -117,8 +117,7 @@ The parameters are read in once the analysis starts and for the force-ramp analy
 
 ***Show Single File***
   
-  
-![show_single_file](https://user-images.githubusercontent.com/59534208/173094123-e8977074-7693-403c-a47f-df5dd042e340.png)
+![Tab2_new](https://user-images.githubusercontent.com/77443646/173436271-b313fdc2-908f-47fb-bae0-527c56b25a2f.PNG)
 
 **Input**
   
@@ -131,7 +130,7 @@ A FD-curve of the original input values, as well as the down sampled values are 
 
 ***Constant Force Analysis***
   
-  ![constant_force_analysis](https://user-images.githubusercontent.com/59534208/173094098-60e74491-8a2f-4a3e-8e94-dedb3a61fa38.png)
+![Tab3_new](https://user-images.githubusercontent.com/77443646/173436319-698ef81b-68c2-4957-8cc7-579660421fb6.PNG)
 
   
 **Input**
@@ -157,9 +156,8 @@ Last, a table with values of the fitted parameters is exported in CSV format.
 
 ***Advanced Settings***
   
-  ![advanced_settings](https://user-images.githubusercontent.com/59534208/173094148-c414151a-bfe6-445b-9c0c-644957fea17f.png)
+![Tab4_new](https://user-images.githubusercontent.com/77443646/173436359-56f1a257-432f-4d47-826e-6b4efc288e10.PNG)
 
-  
 This tab contains all the adjustable parameters in the POTATO.
 The parameters are divided into several groups based on the part of analysis, in which they are used.
   
@@ -229,10 +227,8 @@ Fitting 		- Exports a plot with the fitted models and a table of the fitting par
   
 ***TOMATO - manual analysis***
   
-  
-  ![manual_analysis](https://user-images.githubusercontent.com/59534208/173094184-fc798760-e41e-48e2-941b-8e5cb9fc3079.png)
+![Tab5_new](https://user-images.githubusercontent.com/77443646/173436395-dca85422-a263-4aed-b87b-f18f7eec3aaf.PNG)
 
-  
 This tab allows user to perform manual analysis of the FD curves. TOMATO uses the same input parameters as POTATO.
 1) Choose the folder containing the curves to analyse with the "Choose folder" button. Attention the file format and preprocessing values are set in the "Analysis folder" tab.
 	
