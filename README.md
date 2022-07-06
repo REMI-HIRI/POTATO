@@ -30,7 +30,7 @@ Alternatively they can be changed permanently in the POTATO_config file.
 To avoid issues with different python package versions, or to avoid setting up an appropriate environment, an executable POTATO version is available. 
 
 For more detailed description please refer to: 
-doi: https://doi.org/10.1101/2021.11.11.468103
+doi: https://doi.org/10.1016/j.bpj.2022.06.030
 
 
 ***Dependencies***
