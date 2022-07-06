@@ -417,6 +417,10 @@ def change_FD(direction):
     global orientation
 
     FD_number = FD_number + direction
+    if FD_number == len(Files):
+        FD_number = FD_number - len(Files)
+    if FD_number < 0:
+        FD_number = FD_number + len(Files)
 
     delete_all_steps()
     input_settings, input_format, export_data, input_fitting, input_constantF = check_settings()
@@ -431,6 +435,8 @@ def change_FD(direction):
     entryText_filename.set(filename_TOMATO)
 
     parameters(0, default_values_FIT, default_values_constantF)
+
+    TOMATO_fig1.get_tk_widget().destroy()
 
     fig = plot_TOMATO(Force_Distance_TOMATO)
     TOMATO_fig1 = FigureCanvasTkAgg(fig, TOMATO_figure_frame)
@@ -500,7 +506,6 @@ def save_step():
 
 def analyze_steps():
     global TOMATO_fig1
-    global figure1
     global subplot1
     global tree_results
 
@@ -516,9 +521,12 @@ def analyze_steps():
     treeview_df = pd.DataFrame(row_list, columns=columns)
 
     # iterate through dataframe and fit each part of the curve
+    TOMATO_fig1.get_tk_widget().destroy()
+
     figure1 = plot_TOMATO(Force_Distance_TOMATO)
     diff_colors = ['b', 'r', 'c', 'g', 'y', 'm', 'b', 'r', 'c', 'g', 'y', 'm']
     subplot1 = figure1.add_subplot(111)
+    subplot1.plot(Force_Distance_TOMATO[:, 1], Force_Distance_TOMATO[:, 0], color='gray')
     distance = np.arange(min(Force_Distance_TOMATO[:, 1]), max(Force_Distance_TOMATO[:, 1]) + 50, 2)
 
     export_fit = []
@@ -565,7 +573,7 @@ def analyze_steps():
 
             export_fit.append(ds_fit_dict_TOMATO)
 
-            F_ds_model = ds_fit_dict_TOMATO['model_ds'](distance, ds_fit_dict_TOMATO['fit_model'])
+            F_ds_model = ds_fit_dict_TOMATO['model_ds'](distance, ds_fit_dict_TOMATO['fit_model'].params)
             # plot the marked ds region and fits
             subplot1.plot(Force_Distance_TOMATO[:, 1][:real_step_start], Force_Distance_TOMATO[:, 0][:real_step_start], color=diff_colors[i])
             subplot1.plot(distance, F_ds_model, marker=None, linestyle='dashed', linewidth=1, color="black")
@@ -695,7 +703,7 @@ def analyze_steps():
 
     # plot the marked regions and fits
     # model data
-    F_ss_model = ss_fit_dict_TOMATO['model_ss'](distance, fit_ss)
+    F_ss_model = ss_fit_dict_TOMATO['model_ss'](distance, fit_ss.params)
 
     # plot the marked ss region and fits
     subplot1.plot(d_fitting_region_ss[:], f_fitting_region_ss, color=diff_colors[j + 1])
