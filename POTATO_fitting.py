@@ -194,7 +194,7 @@ def fitting_ss(filename_i, input_settings, export_data, input_fitting, i_start, 
     # contour length
     fit_ss["RNA/Lc"].value = input_fitting['lc_ss']
     fit_ss["RNA/Lc"].lower_bound = 0
-    fit_ss["RNA/Lc"].upper_bound = input_fitting['lc_ss'] + 100
+    fit_ss["RNA/Lc"].upper_bound = input_fitting['lc_ss'] + 1000
 
     fit_ss["RNA/Lc"].unit = 'nm'
 
