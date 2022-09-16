@@ -618,7 +618,7 @@ def analyze_steps():
 
             # plot the marked regions and fits
             # model data
-            F_ss_model = ss_fit_dict_TOMATO['model_ss'](distance, fit_ss)
+            F_ss_model = ss_fit_dict_TOMATO['model_ss'](distance, fit_ss.params)
 
             # plot the marked ss region and fits
             subplot1.plot(d_fitting_region_ss[:], f_fitting_region_ss, color=diff_colors[i])
