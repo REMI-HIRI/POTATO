@@ -583,6 +583,22 @@ def analyze_steps():
             j = i
             fit_ss, f_fitting_region_ss, d_fitting_region_ss, ss_fit_dict_TOMATO, area_ss_fit_start, area_ss_fit_end = fitting_ss(filename_TOMATO, input_settings, export_data, input_fitting, float(treeview_df['Step end'][i - 1]), float(treeview_df['Step start'][i]), Force_Distance_TOMATO, 1, 1, der_arr_TOMATO, [], 1)
 
+            real_step_start = np.where(Force_Distance_TOMATO[:, 0] == f_fitting_region_ss[-1])
+            real_step_start = real_step_start[0][0]
+
+            fit.append(fit_ss)
+            start_force_ss.append(f_fitting_region_ss)
+            start_distance_ss.append(d_fitting_region_ss)
+            export_fit.append(ss_fit_dict_TOMATO)
+            integral_ss_fit_start.append(area_ss_fit_start)
+            integral_ss_fit_end.append(area_ss_fit_end)
+
+            ssLp_variable.set(ss_fit_dict_TOMATO['Lp_ss'])
+            f_off_variable.set(ss_fit_dict_TOMATO['f_offset'])
+            d_off_variable.set(ss_fit_dict_TOMATO["d_offset"])
+            ssLc_variable.set(ss_fit_dict_TOMATO['Lc_ss'])
+            stiff_ss_variable.set(ss_fit_dict_TOMATO['St_ss'])
+
             tree_results.insert("", "end", iid='{}step{}'.format(timestamp, j), values=(
                 filename_TOMATO,
                 i,
@@ -598,23 +614,12 @@ def analyze_steps():
                 ssLc_variable.get(),
                 ssLp_variable.get(),
                 stiff_ss_variable.get(),
-
                 f_off_variable.get(),
                 d_off_variable.get(),
                 '',
                 ''
             )
             )
-
-            real_step_start = np.where(Force_Distance_TOMATO[:, 0] == f_fitting_region_ss[-1])
-            real_step_start = real_step_start[0][0]
-
-            fit.append(fit_ss)
-            start_force_ss.append(f_fitting_region_ss)
-            start_distance_ss.append(d_fitting_region_ss)
-            export_fit.append(ss_fit_dict_TOMATO)
-            integral_ss_fit_start.append(area_ss_fit_start)
-            integral_ss_fit_end.append(area_ss_fit_end)
 
             # plot the marked regions and fits
             # model data
