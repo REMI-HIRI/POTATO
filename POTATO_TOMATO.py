@@ -3,7 +3,7 @@ from matplotlib.figure import Figure
 
 
 def plot_TOMATO(FD):
-    figure1 = Figure(figsize=(9, 7), dpi=100)
+    figure1 = Figure(figsize=(9, 7), dpi=70)
     subplot1 = figure1.add_subplot(111)
 
     F = FD[:, 0]

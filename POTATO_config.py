@@ -46,7 +46,7 @@ default_values_FIT = {
     'Persistance-Length ds, upper bound, nm': '80',
     'Persistance-Length ds, lower bound, nm': '12',
     'Persistance-Length ss, nm': '1',
-    'Contour-Length ds, nm': '830',
+    'Contour-Length ds, nm': '1250',
     'Contour-Length ss, nm': '0',
     'Stiffness ds, pN': '500',
     'Stiffness ds, upper bound, pN': '600',

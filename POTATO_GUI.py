@@ -539,7 +539,7 @@ def analyze_steps():
     for i in treeview_df.index:
         # part before first step is fitted with a single WLC model (ds part)
         if treeview_df['Step number'][i] == 1:
-            j = i
+            j = treeview_df['Step number'][i]
             ds_fit_dict_TOMATO, TOMATO_area_ds, real_step_start = fitting_ds(filename_TOMATO, input_settings, export_data, input_fitting, float(treeview_df['Step start'][i]), Force_Distance_TOMATO, der_arr_TOMATO, [], 1)
             ds_fit_region_end = real_step_start
 
@@ -550,7 +550,7 @@ def analyze_steps():
             stiff_ds_variable.set(ds_fit_dict_TOMATO['St_ds'])
 
             tree_results.insert("", "end", iid='{}no step'.format(timestamp), values=(
-                filename_TOMATO,
+                entryText_filename.get(),
                 i,
                 '',
                 '',
@@ -580,11 +580,8 @@ def analyze_steps():
 
         # fit the other ss parts
         elif treeview_df['Step number'][i] > 1:
-            j = i
+            j = treeview_df['Step number'][i]
             fit_ss, f_fitting_region_ss, d_fitting_region_ss, ss_fit_dict_TOMATO, area_ss_fit_start, area_ss_fit_end = fitting_ss(filename_TOMATO, input_settings, export_data, input_fitting, float(treeview_df['Step end'][i - 1]), float(treeview_df['Step start'][i]), Force_Distance_TOMATO, 1, 1, der_arr_TOMATO, [], 1)
-
-            real_step_start = np.where(Force_Distance_TOMATO[:, 0] == f_fitting_region_ss[-1])
-            real_step_start = real_step_start[0][0]
 
             fit.append(fit_ss)
             start_force_ss.append(f_fitting_region_ss)
@@ -599,12 +596,12 @@ def analyze_steps():
             ssLc_variable.set(ss_fit_dict_TOMATO['Lc_ss'])
             stiff_ss_variable.set(ss_fit_dict_TOMATO['St_ss'])
 
-            tree_results.insert("", "end", iid='{}step{}'.format(timestamp, j), values=(
-                filename_TOMATO,
+            tree_results.insert("", "end", iid='{}step{}'.format(timestamp, j-1), values=(
+                entryText_filename.get(),
                 i,
                 Force_Distance_TOMATO[real_step_start, 0],
                 f_fitting_region_ss[0],
-                f_fitting_region_ss[0] - Force_Distance_TOMATO[real_step_start, 0],
+                (f_fitting_region_ss[0] + Force_Distance_TOMATO[real_step_start, 0]) / 2,
                 Force_Distance_TOMATO[real_step_start, 1],
                 d_fitting_region_ss[0],
                 d_fitting_region_ss[0] - Force_Distance_TOMATO[real_step_start, 1],
@@ -620,6 +617,9 @@ def analyze_steps():
                 ''
             )
             )
+
+            real_step_start = np.where(Force_Distance_TOMATO[:, 0] == f_fitting_region_ss[-1])
+            real_step_start = real_step_start[0][0]
 
             # plot the marked regions and fits
             # model data
@@ -658,12 +658,12 @@ def analyze_steps():
     ssLc_variable.set(ss_fit_dict_TOMATO['Lc_ss'])
     stiff_ss_variable.set(ss_fit_dict_TOMATO['St_ss'])
 
-    tree_results.insert("", "end", iid='{}step{}'.format(timestamp, j + 1), values=(
-        filename_TOMATO,
-        j + 1,
+    tree_results.insert("", "end", iid='{}step{}'.format(timestamp, j), values=(
+        entryText_filename.get(),
+        j,
         Force_Distance_TOMATO[:, 0][real_step_start],
         f_fitting_region_ss[0],
-        f_fitting_region_ss[0] - Force_Distance_TOMATO[:, 0][real_step_start],
+        (f_fitting_region_ss[0] + Force_Distance_TOMATO[:, 0][real_step_start]) / 2,
         Force_Distance_TOMATO[:, 1][real_step_start],
         d_fitting_region_ss[0],
         d_fitting_region_ss[0] - Force_Distance_TOMATO[:, 1][real_step_start],
@@ -694,17 +694,19 @@ def analyze_steps():
 
     if j > 1:
         for n in range(1, j):
+            print(start_distance_ss[n - 1][-1])
+            print(start_distance_ss[n][0])
             work_step_n, kT_n = calc_integral(
-                integral_ss_fit_end[n],
-                integral_ss_fit_start[n - 1],
+                integral_ss_fit_end[n - 1],
+                integral_ss_fit_start[n],
                 start_distance_ss[n - 1][-1],
                 start_distance_ss[n][0],
                 start_force_ss[n - 1][-1],
                 start_force_ss[n][0]
             )
-
-            tree_results.set('{}step{}'.format(timestamp, n), column='Work [pN*nm]', value=work_step_n)
-            tree_results.set('{}step{}'.format(timestamp, n), column='Work [kT]', value=kT_n)
+            print('WORK', work_step_n)
+            tree_results.set('{}step{}'.format(timestamp, n+1), column='Work [pN*nm]', value=work_step_n)
+            tree_results.set('{}step{}'.format(timestamp, n+1), column='Work [kT]', value=kT_n)
 
     # plot the marked regions and fits
     # model data
@@ -776,7 +778,7 @@ def export_table():
                                 'step number',
                                 'Force step start [pN]',
                                 'Force step end [pN]',
-                                'delta force [pN]',
+                                'mean force [pN]',
                                 'extension step start [nm]',
                                 'extension step end [nm]',
                                 'Step length [nm]',
@@ -800,23 +802,19 @@ def export_table():
 def tab_bind(event=None):
     if tabControl.index(tabControl.select()) == 4:
         root.bind("<Right>", next_FD_key)
-        root.bind("<d>", next_FD_key)
         root.bind("<Left>", previous_FD_key)
-        root.bind("<a>", previous_FD_key)
         root.bind("<s>", start_click_key)
         root.bind("<e>", end_click_key)
         root.bind("<Control-s>", save_step_key)
-        root.bind("<f>", start_analysis_key)
+        root.bind("<Control-f>", start_analysis_key)
         root.bind("<Delete>", delete_result)
     else:
         root.unbind("<Right>")
-        root.unbind("<d>")
         root.unbind("<Left>")
-        root.unbind("<a>")
         root.unbind("<s>")
         root.unbind("<e>")
         root.unbind("<Control-s>")
-        root.unbind("<f>")
+        root.unbind("<Control-f>")
         root.unbind("<Delete>")
 
 ############## TOMATO functions end ###################
@@ -1507,7 +1505,7 @@ if __name__ == '__main__':
     button_reset_parameters = tk.Button(TOMATO_button_frame, text='Reset parameters', command=lambda: parameters(0, default_values_FIT, default_values_constantF) if check_box_HF == 1 else (parameters(default_values_HF, default_values_FIT, default_values_constantF) if check_box_LF == 1 else parameters(default_values_CSV, default_values_FIT, default_values_constantF)), bg='palegreen2', font=('Arial', 11, 'bold'))
     button_reset_parameters.grid(row=1, column=1, padx=4, pady=4)
 
-    label_info = tk.Label(TOMATO_button_frame, text='TOMATO is unresponsive during fitting, please be patient\n\nmark step start <s>\n mark step end <e>\n save marked step <Ctrl+s>\n start analysis <f>\n delete results line <mark+del>\n next curve <Right arrow> or <d>\n previous curve <Left arrow> or <a>')
+    label_info = tk.Label(TOMATO_button_frame, text='TOMATO is unresponsive during fitting, please be patient\n\nmark step start <s>\n mark step end <e>\n save marked step <Ctrl+s>\n start analysis <Ctrl+f>\n delete results line <mark+del>\n next curve <Right arrow>\n previous curve <Left arrow>')
     label_info.grid(row=2, column=0, padx=4, pady=4)
 
     button_start = tk.Button(TOMATO_parameter_frame, text='Set start', command=start_click, bg='lightsteelblue2', font=('Arial', 10, 'bold'))
@@ -1533,7 +1531,7 @@ if __name__ == '__main__':
         'step number',
         'Force step start [pN]',
         'Force step end [pN]',
-        'delta force [pN]',
+        'mean force [pN]',
         'extension step start [nm]',
         'extension step end [nm]',
         'Step length [nm]',
