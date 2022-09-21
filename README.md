@@ -1,6 +1,6 @@
 Copyright 2021 Helmholtz-Zentrum für Infektionsforschung GmbH
 
-POTATO -- 2022-06-10
+POTATO -- 2022-09-21
 
 Developed by Lukáš Pekárek and Stefan Buck at the Helmholtz Institute for RNA-based Infection Research
 
