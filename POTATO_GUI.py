@@ -1,6 +1,6 @@
 """Copyright 2021 Helmholtz-Zentrum für Infektionsforschung GmbH"""
 
-""" POTATO -- 2021-10-14 -- Version 1.1
+""" POTATO -- 2022-12-13 -- Version 1.6
     Developed by Lukáš Pekárek and Stefan Buck at the Helmholtz Institute for RNA-based Infection Research
     In the research group REMI - Recoding Mechanisms in Infections
     Supervisor - Jun. Prof. Neva Caliskan """
@@ -21,7 +21,6 @@ from PIL import ImageTk, Image
 import pandas as pd
 import numpy as np
 import os
-import h5py
 import glob
 import time
 import multiprocessing as mp
@@ -125,11 +124,14 @@ def parameters(default_values, default_fit, default_constantF):
     dsLp_low_variable.set(str(default_fit['Persistance-Length ds, lower bound, nm']))
     ssLp_variable.set(str(default_fit['Persistance-Length ss, nm']))
     dsLc_variable.set(str(default_fit['Contour-Length ds, nm']))
-    ssLc_variable.set(str(default_fit['Persistance-Length ss, nm']))
+    ssLc_variable.set(str(default_fit['Contour-Length ss, nm']))
+    ssLc_up_variable.set(str(default_fit['Contour-Length ss, upper bound, nm']))
     stiff_ds_variable.set(str(default_fit['Stiffness ds, pN']))
     stiff_ds_up_variable.set(str(default_fit['Stiffness ds, upper bound, pN']))
     stiff_ds_low_variable.set(str(default_fit['Stiffness ds, lower bound, pN']))
     stiff_ss_variable.set(str(default_fit['Stiffness ss, pN']))
+    stiff_ss_up_variable.set(str(default_fit['Stiffness ss, upper bound, pN']))
+    stiff_ss_low_variable.set(str(default_fit['Stiffness ss, lower bound, pN']))
     f_off_variable.set(str(default_fit['Force offset, pN']))
     f_off_up_variable.set(str(default_fit['Force offset, upper bound, pN']))
     f_off_low_variable.set(str(default_fit['Force offset, lower bound, pN']))
@@ -197,10 +199,13 @@ def check_settings():
         'lc_ds': float(dsLc.get()),
         'lp_ss': float(ssLp.get()),
         'lc_ss': float(ssLc.get()),
+        'lc_ss_up': float(ssLc_up.get()),
         'ds_stiff': float(stiff_ds.get()),
         'ds_stiff_up': float(stiff_ds_up.get()),
         'ds_stiff_low': float(stiff_ds_low.get()),
         'ss_stiff': float(stiff_ss.get()),
+        'ss_stiff_up': float(stiff_ss_up.get()),
+        'ss_stiff_low': float(stiff_ss_low.get()),
         'offset_f': float(f_off.get()),
         'offset_f_up': float(f_off_up.get()),
         'offset_f_low': float(f_off_low.get()),
@@ -223,6 +228,7 @@ def check_settings():
     return input_settings, input_format, export_data, input_fitting, input_constantF
 
 
+# export parameters used for the analysis in a txt file
 def export_settings(analysis_path, timestamp, input_1, input_2):
     with open(str(analysis_path + '/parameters_' + timestamp + '.txt'), 'w') as config_used:
         config_used.write('Data processing:\n')
@@ -234,7 +240,6 @@ def export_settings(analysis_path, timestamp, input_1, input_2):
 
 # Looks for output of the subprocess
 def refresh():
-    global new_image
     while output_q.empty() is False:
         output = output_q.get()
         output_window.insert("end", "\n" + output + "\n")
@@ -260,65 +265,34 @@ def readme():
         text.insert("end", help_text)
 
 
-# display a single h5 file (tab2)
-def getRAW_File_h5():
-    input_settings, input_format, export_data, input_fitting, input_constantF = check_settings()
-    import_file_path = filedialog.askopenfilename()
-    with h5py.File(import_file_path, "r") as raw_data:
-        # access the raw data
-        if input_format['HF'] == 1:
-            if input_format['Trap'] == 1:
-                Force = raw_data.get("Force HF/Force 1x")
-            elif input_format['Trap'] == 0:
-                Force = raw_data.get("Force HF/Force 2x")
-            Distance = raw_data.get("Distance/Piezo Distance")
-
-        elif input_format['LF'] == 1:
-            if input_format['Trap'] == 1:
-                load_force = raw_data.get("Force LF/Force 1x")
-                Force = load_force[:]['Value'][:]
-                load_distance = raw_data.get("Distance/Distance 1x")[:]
-                Distance = load_distance['Value'][:]
-            elif input_format['Trap'] == 0:
-                load_force = raw_data.get("Force LF/Force 2x")
-                Force = load_force[:]['Value'][:]
-                load_distance = raw_data.get("Distance/Distance 2x")[:]
-                Distance = load_distance['Value'][:]
-        if input_format['preprocess'] == 1:
-            FD, FD_um = preprocess_RAW(Force, Distance, input_settings)
-            display_RAW_FD(FD[:, 0], FD[:, 1], Force[::input_settings['downsample_value']], Distance[::input_settings['downsample_value']] * 1000)
+# display a single file (tab2)
+def get_single_file(format):
+    if format == 'csv':
+        if not check_box_CSV.get() == 1:
+            check_box_CSV.set(value=1)
+            select_box(check_box_CSV, check_box_HF, check_box_LF)
+            parameters(default_values_CSV, default_values_FIT, default_values_constantF)
         else:
-            Force = np.array(Force)
-            Distance = np.array(Distance)
-            display_RAW_FD(Force, Distance, Force, Distance)
-
-
-# display a single csv file (tab2)
-def getRAW_File_csv():
-    if not check_box_CSV.get() == 1:
-        check_box_CSV.set(value=1)
-        select_box(check_box_CSV, check_box_HF, check_box_LF)
-        parameters(default_values_CSV, default_values_FIT, default_values_constantF)
-    else:
-        pass
+            pass
 
     input_settings, input_format, export_data, input_fitting, input_constantF = check_settings()
     import_file_path = filedialog.askopenfilename()
-
-    df = pd.read_csv(import_file_path)
-
-    Force = df.to_numpy()[:, 0]
-    Distance = df.to_numpy()[:, 1]
-
-    if input_format['preprocess'] == 1:
-        FD, FD_um = preprocess_RAW(Force, Distance, input_settings)
-        display_RAW_FD(FD[:, 0], FD[:, 1], Force[::input_settings['downsample_value']], Distance[::input_settings['downsample_value']] * 1000)
-    else:
-        display_RAW_FD(Force, Distance, Force, Distance)
+    input_format['preprocess'] = 0
+    FD_raw, FD_raw_um, Frequency_value, filename = read_in_data(0, [import_file_path], input_settings, input_format)
+    input_format['preprocess'] = 1
+    FD, FD_um, Frequency_value, filename = read_in_data(0, [import_file_path], input_settings, input_format)
+    display_RAW_FD(FD[:, 0], FD[:, 1], FD_raw[:, 0], FD_raw[:, 1], filename)
 
 
 # create the plot for tab2
-def display_RAW_FD(processed_F, processed_D, raw_F, raw_D):
+def display_RAW_FD(processed_F, processed_D, raw_F, raw_D, filename):
+    global figure_raw
+
+    try:
+        figure_raw.get_tk_widget().destroy()
+    except:
+        pass
+
     single_fd = Figure(figsize=(10, 6), dpi=100)
     subplot1 = single_fd.add_subplot(111)
 
@@ -327,6 +301,7 @@ def display_RAW_FD(processed_F, processed_D, raw_F, raw_D):
         Line2D([0], [0], color='C1', lw=4)
     ]
 
+    subplot1.set_title(str(filename))
     subplot1.set_xlabel("Distance (nm)")
     subplot1.set_ylabel("Force (pN)")
     subplot1.plot(raw_D, raw_F, alpha=0.8, color='C0', zorder=0)
@@ -772,28 +747,26 @@ def export_table():
     for child in tree_results.get_children():
         results.append(tree_results.item(child)['values'])
 
-    Fit_results = pd.DataFrame(results,
-                            columns=[
-                                'Filename',
-                                'step number',
-                                'Force step start [pN]',
-                                'Force step end [pN]',
-                                'mean force [pN]',
-                                'extension step start [nm]',
-                                'extension step end [nm]',
-                                'Step length [nm]',
-                                'ds contour length',
-                                'ds persistance Length',
-                                'ds stiffness (K0) [pN]',
-                                'ss contour Length',
-                                'ss persistance Length',
-                                'ss stiffness (K0) [pN]',
-                                'Force offset',
-                                'Distance offset',
-                                'Work [pN*nm]',
-                                'Work [kT]'
-                            ]
-    )
+    Fit_results = pd.DataFrame(results, columns=[
+        'Filename',
+        'step number',
+        'Force step start [pN]',
+        'Force step end [pN]',
+        'mean force [pN]',
+        'extension step start [nm]',
+        'extension step end [nm]',
+        'Step length [nm]',
+        'ds contour length',
+        'ds persistance Length',
+        'ds stiffness (K0) [pN]',
+        'ss contour Length',
+        'ss persistance Length',
+        'ss stiffness (K0) [pN]',
+        'Force offset',
+        'Distance offset',
+        'Work [pN*nm]',
+        'Work [kT]'
+        ])
 
     name = filedialog.asksaveasfile(mode='w', defaultextension=".csv")
     Fit_results.to_csv(name.name, index=False, header=True)
@@ -837,8 +810,8 @@ if __name__ == '__main__':
     file_menu = tk.Menu(drop_down_menu, tearoff=0)
     drop_down_menu.add_cascade(label='File', menu=file_menu)
     file_menu.add_command(label='Analyse folder (FD curves)', command=start_analysis)
-    file_menu.add_command(label='Display single FD curve (h5)', command=getRAW_File_h5)
-    file_menu.add_command(label='Display single FD curve (csv)', command=getRAW_File_csv)
+    file_menu.add_command(label='Display single FD curve (h5)', command=lambda: get_single_file('h5'))
+    file_menu.add_command(label='Display single FD curve (csv)', command=lambda: get_single_file('csv'))
     file_menu.add_separator()
     file_menu.add_command(label='Display constant force', command=show_constantF)
     file_menu.add_command(label='Fit constant force', command=start_constantF)
@@ -862,12 +835,6 @@ if __name__ == '__main__':
     tab3 = ttk.Frame(tabControl, width=800, height=600)
     tab4 = ttk.Frame(tabControl, width=800, height=600)
     tab5 = ttk.Frame(tabControl, width=800, height=600)
-
-    tab1.grid(row=0, column=0, padx=2, pady=2)
-    tab2.grid(row=0, column=0, padx=2, pady=2)
-    tab3.grid(row=0, column=0, padx=2, pady=2)
-    tab4.grid(row=0, column=0, padx=2, pady=2)
-    tab5.grid(row=0, column=0, padx=2, pady=2)
 
     # ATTENTION - tab3 and tab4 are displayed the other way round in the GUI
     tabControl.add(tab1, text="Folder Analysis")
@@ -1066,7 +1033,7 @@ if __name__ == '__main__':
     BUTTON2 = tk.Button(
         parameter_frame2,
         text='Open h5 file',
-        command=getRAW_File_h5,
+        command=lambda: get_single_file('h5'),
         bg='#df4c4c',
         activebackground='#eaa90d',
         font='Helvetica 11 bold',
@@ -1079,7 +1046,7 @@ if __name__ == '__main__':
     BUTTON3 = tk.Button(
         parameter_frame2,
         text='Open csv file',
-        command=getRAW_File_csv,
+        command=lambda: get_single_file('csv'),
         bg='#df4c4c',
         activebackground='#eaa90d',
         font='Helvetica 11 bold',
@@ -1089,7 +1056,7 @@ if __name__ == '__main__':
 
     BUTTON3.grid(row=1, column=0, pady=20, sticky='E')
 
-    """organize tab3 """
+    """organize tab3 - advanced settings """
     frame1 = tk.Frame(tab3, borderwidth=1, relief='ridge')
     frame1.grid(row=0, column=0, sticky='N')
     frame2 = tk.Frame(tab3, borderwidth=1, relief='ridge')
@@ -1216,10 +1183,13 @@ if __name__ == '__main__':
     Label_dsLc = tk.Label(frame3, text='dsLc [nm]')
     Label_ssLp = tk.Label(frame3, text='ssLp [nm]')
     Label_ssLc = tk.Label(frame3, text='ssLc [nm]')
+    Label_ssLc_up = tk.Label(frame3, text='ssLc upper bound [nm]')
     Label_stiffness_ds = tk.Label(frame3, text='dsK0 [pN]')
     Label_stiffness_ds_up = tk.Label(frame3, text='dsK0 upper bound [pN]')
     Label_stiffness_ds_low = tk.Label(frame3, text='dsK0 lower bound [pN]')
     Label_stiffness_ss = tk.Label(frame3, text='ssK0 [pN]')
+    Label_stiffness_ss_up = tk.Label(frame3, text='ssK0 upper bound [pN]')
+    Label_stiffness_ss_low = tk.Label(frame3, text='ssK0 lower bound [pN]')
     Label_f_offset = tk.Label(frame3, text='Force offset [pN]')
     Label_f_offset_up = tk.Label(frame3, text='Force offset upper bound [pN]')
     Label_f_offset_low = tk.Label(frame3, text='Force offset lower bound [pN]')
@@ -1240,6 +1210,8 @@ if __name__ == '__main__':
     ssLp = tk.Entry(frame3, textvariable=ssLp_variable)
     ssLc_variable = tk.StringVar()
     ssLc = tk.Entry(frame3, textvariable=ssLc_variable)
+    ssLc_up_variable = tk.StringVar()  
+    ssLc_up = tk.Entry(frame3, textvariable=ssLc_up_variable)
     stiff_ds_variable = tk.StringVar()
     stiff_ds = tk.Entry(frame3, textvariable=stiff_ds_variable)
     stiff_ds_up_variable = tk.StringVar()
@@ -1248,6 +1220,10 @@ if __name__ == '__main__':
     stiff_ds_low = tk.Entry(frame3, textvariable=stiff_ds_low_variable)
     stiff_ss_variable = tk.StringVar()
     stiff_ss = tk.Entry(frame3, textvariable=stiff_ss_variable)
+    stiff_ss_up_variable = tk.StringVar()
+    stiff_ss_up = tk.Entry(frame3, textvariable=stiff_ss_up_variable)
+    stiff_ss_low_variable = tk.StringVar()
+    stiff_ss_low = tk.Entry(frame3, textvariable=stiff_ss_low_variable)
     f_off_variable = tk.StringVar()
     f_off = tk.Entry(frame3, textvariable=f_off_variable)
     f_off_up_variable = tk.StringVar()
@@ -1295,6 +1271,9 @@ if __name__ == '__main__':
     Label_ssLc.grid(row=3, column=2, sticky=tk.E + tk.W, padx=2, pady=2)
     ssLc.grid(row=3, column=3, padx=(0, 20), pady=2)
 
+    Label_ssLc_up.grid(row=4, column=2, sticky=tk.E + tk.W, padx=2, pady=2)
+    ssLc_up.grid(row=4, column=3, padx=(0, 20), pady=2)
+
     Label_stiffness_ds.grid(row=6, column=0, sticky=tk.E + tk.W, padx=2, pady=2)
     stiff_ds.grid(row=6, column=1, padx=(0, 20), pady=2)
 
@@ -1306,6 +1285,12 @@ if __name__ == '__main__':
 
     Label_stiffness_ss.grid(row=6, column=2, sticky=tk.E + tk.W, padx=2, pady=2)
     stiff_ss.grid(row=6, column=3, padx=(0, 20), pady=2)
+
+    Label_stiffness_ss_up.grid(row=7, column=2, sticky=tk.E + tk.W, padx=2, pady=2)
+    stiff_ss_up.grid(row=7, column=3, padx=(0, 20), pady=2)
+
+    Label_stiffness_ss_low.grid(row=8, column=2, sticky=tk.E + tk.W, padx=2, pady=2)
+    stiff_ss_low.grid(row=8, column=3, padx=(0, 20), pady=2)
 
     Label_f_offset.grid(row=9, column=0, sticky=tk.E + tk.W, padx=2, pady=2)
     f_off.grid(row=9, column=1, padx=(0, 20), pady=2)

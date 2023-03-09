@@ -10,6 +10,8 @@ from matplotlib.lines import Line2D
 """define the functions used for fitting"""
 
 
+# if the step start/end are selected manually by TOMATO,
+# the nearest point on the curve is selected in the array
 def find_nearest(array, value):
     array = np.asarray(array)
     idx = (np.abs(array - value)).argmin()
@@ -33,17 +35,6 @@ def fitting_ds(filename_i, input_settings, export_data, input_fitting, i_start, 
         start_step1 = find_nearest(Force_Distance[:, 1], i_start)
         f_fitting_region_ds = Force_Distance[0:start_step1, 0]
         d_fitting_region_ds = Force_Distance[0:start_step1, 1]
-
-        # start_step1 = start_step1[0][0]
-
-    # delta_f = f_fitting_region_ds[-1] - f_fitting_region_ds[0]
-    # delta_d = d_fitting_region_ds[-1] - d_fitting_region_ds[0]
-    # d_f_ratio = delta_d / delta_f
-    #
-    # # downsample the data used for fitting with a dD/dF ratio
-    # while len(f_fitting_region_ds) > 100 * d_f_ratio:
-    #     f_fitting_region_ds = f_fitting_region_ds[::2]
-    #     d_fitting_region_ds = d_fitting_region_ds[::2]
 
     model_ds = lk.inverted_odijk("ds_part").subtract_independent_offset() + lk.force_offset("ds_part")
 
@@ -188,13 +179,13 @@ def fitting_ss(filename_i, input_settings, export_data, input_fitting, i_start, 
 
     # stiffnes
     fit_ss["RNA/St"].value = input_fitting['ss_stiff']
-    fit_ss["RNA/St"].lower_bound = 300
-    fit_ss["RNA/St"].upper_bound = 1500
+    fit_ss["RNA/St"].lower_bound = input_fitting['ss_stiff_low']
+    fit_ss["RNA/St"].upper_bound = input_fitting['ss_stiff_up']
 
     # contour length
     fit_ss["RNA/Lc"].value = input_fitting['lc_ss']
     fit_ss["RNA/Lc"].lower_bound = 0
-    fit_ss["RNA/Lc"].upper_bound = input_fitting['lc_ss'] + 100
+    fit_ss["RNA/Lc"].upper_bound = input_fitting['lc_ss_up']
 
     fit_ss["RNA/Lc"].unit = 'nm'
 
