@@ -240,6 +240,7 @@ def export_settings(analysis_path, timestamp, input_1, input_2):
 
 # Looks for output of the subprocess
 def refresh():
+    global new_image
     while output_q.empty() is False:
         output = output_q.get()
         output_window.insert("end", "\n" + output + "\n")
@@ -247,10 +248,10 @@ def refresh():
     try:
         images = str(analysis_folder + "/*plot*.png")
         list_images = glob.glob(images)
-        img = Image.open(list_images[-1])
+        img = Image.open(list_images[-1].replace("\\", "\\\\"))
         resized = img.resize((1000, 650), Image.ANTIALIAS)
         new_image = ImageTk.PhotoImage(resized)
-        figure_frame.create_image(0, 0, image=new_image, anchor="nw")
+        figure_frame.create_image((0, 0), image=new_image, anchor="nw")
     except:
         pass
 
