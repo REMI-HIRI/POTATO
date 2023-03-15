@@ -235,21 +235,24 @@ def plot_fit(fit, start_force_ss, start_distance_ss, Force_Distance, save_folder
 
     legend_elements = [
         Line2D([0], [0], color='k', lw=1, alpha=0.85),
-        Line2D([0], [0], color='r', lw=1),
+        # Line2D([0], [0], color='r', lw=1),
         Line2D([0], [0], color='gray', linestyle='dashed', lw=1)
     ]
 
+    diff_colors = ['b', 'r', 'c', 'g', 'y', 'm', 'b', 'r', 'c', 'g', 'y', 'm', 'b', 'r', 'c', 'g', 'y', 'm', 'b', 'r', 'c', 'g', 'y', 'm']
+
     plt.plot(Force_Distance[:, 1], Force_Distance[:, 0], 'k', alpha=0.85)
-    plt.scatter(d_fitting_region_ds, f_fitting_region_ds, color='r', s=4)
-    plt.plot(distance, F_ds_model, linestyle='dashed', color='gray')
+    plt.axis([min(Force_Distance[:, 1]) - 50, max(Force_Distance[:, 1]) + 50, 0, max(Force_Distance[:, 0]) + 15])
+    plt.scatter(d_fitting_region_ds, f_fitting_region_ds, color=diff_colors[0], s=4)
+    plt.plot(distance, F_ds_model, linestyle='dashed', color=diff_colors[0], linewidth=0.5, alpha=0.85)
     plt.ylabel("Force [pN]")
     plt.xlabel("Distance [nm]")
     plt.legend(legend_elements, ['FD-Curve', 'Part used for fitting', 'Fitted WLC model'])
-
+    
     for i in range(0, len(fit)):
         F_ss_model = model_ss(distance, fit[i].params)
-        plt.scatter(start_distance_ss[i], start_force_ss[i], s=4)
-        plt.plot(distance, F_ss_model, linestyle='dashed', color='gray')
+        plt.scatter(start_distance_ss[i], start_force_ss[i], s=4, color=diff_colors[i+1])
+        plt.plot(distance, F_ss_model, linestyle='dashed', color=diff_colors[i+1], linewidth=0.5, alpha=0.85)
 
     plotname = save_folder + "/" + filename_i + "_fit_" + start_time + ".png"
 

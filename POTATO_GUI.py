@@ -1,6 +1,6 @@
 """Copyright 2021 Helmholtz-Zentrum für Infektionsforschung GmbH"""
 
-""" POTATO -- 2023-03-13 -- Version 1.3
+""" POTATO -- 2022-12-13 -- Version 1.6
     Developed by Lukáš Pekárek and Stefan Buck at the Helmholtz Institute for RNA-based Infection Research
     In the research group REMI - Recoding Mechanisms in Infections
     Supervisor - Jun. Prof. Neva Caliskan """
@@ -377,6 +377,11 @@ def open_folder():
 
     entryText_filename.set(filename_TOMATO)
 
+    try:
+        TOMATO_fig1.get_tk_widget().destroy()
+    except:
+        pass
+
     fig = plot_TOMATO(Force_Distance_TOMATO)
     TOMATO_fig1 = FigureCanvasTkAgg(fig, TOMATO_figure_frame)
     TOMATO_fig1.get_tk_widget().grid(row=0, column=0, sticky='wens')
@@ -500,7 +505,7 @@ def analyze_steps():
     TOMATO_fig1.get_tk_widget().destroy()
 
     figure1 = plot_TOMATO(Force_Distance_TOMATO)
-    diff_colors = ['b', 'r', 'c', 'g', 'y', 'm', 'b', 'r', 'c', 'g', 'y', 'm']
+    diff_colors = ['b', 'r', 'c', 'g', 'y', 'm', 'b', 'r', 'c', 'g', 'y', 'm', 'b', 'r', 'c', 'g', 'y', 'm', 'b', 'r', 'c', 'g', 'y', 'm']
     subplot1 = figure1.add_subplot(111)
     subplot1.plot(Force_Distance_TOMATO[:, 1], Force_Distance_TOMATO[:, 0], color='gray')
     distance = np.arange(min(Force_Distance_TOMATO[:, 1]), max(Force_Distance_TOMATO[:, 1]) + 50, 2)
