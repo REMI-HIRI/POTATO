@@ -58,12 +58,18 @@ def read_in_data(file_num, Files, input_settings, input_format):
                 if input_format['Trap'] == 1:
                     load_force = f.get("Force LF/Force 1x")
                     Force = load_force[:]['Value'][:]
-                    load_distance = f.get("Distance/Distance 1x")[:]
+                    try:
+                        load_distance = f.get("Distance/Distance 1x")[:]
+                    except:
+                        load_distance = f.get("Distance/Distance 2")[:]
                     Distance = load_distance['Value'][:]
                 elif input_format['Trap'] == 0:
                     load_force = f.get("Force LF/Force 2x")
                     Force = load_force[:]['Value'][:]
-                    load_distance = f.get("Distance/Distance 2x")[:]
+                    try:
+                        load_distance = f.get("Distance/Distance 2x")[:]
+                    except:
+                        load_distance = f.get("Distance/Distance 1")[:]
                     Distance = load_distance['Value'][:]
                 if input_format['preprocess'] == 1:
                     Force_Distance, Force_Distance_um = preprocess_RAW(Force, Distance, input_settings)
