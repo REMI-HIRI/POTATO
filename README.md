@@ -41,7 +41,7 @@ Packages:
   glob,
   h5py,
   json,
-  lumicks.pylake,
+  lumicks.pylake (v0.12.1),
   matplotlib,
   multiprocessing,
   numpy,
