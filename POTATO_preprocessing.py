@@ -4,18 +4,54 @@ from scipy import signal
 import numpy as np
 
 
-def preprocess_RAW(Force, Distance, input_settings):
-    # Downsample
-    Force_ds = Force[::input_settings['downsample_value']]
-    Distance_ds = Distance[::input_settings['downsample_value']]
+def preprocess_RAW(Force, Distance, input_settings, input_format):
 
-    # Filter
-    b, a = signal.butter(input_settings['filter_degree'], input_settings['filter_cut_off'])
-    filteredForce = signal.filtfilt(b, a, Force_ds)
-    filteredDistance = signal.filtfilt(b, a, Distance_ds)
+    if input_format['Augment'] == 1 and input_settings['augment_factor'] != '':
+        # Augment data
+        new_f = []
+        new_d = []
+        factor = int(input_settings['augment_factor'])
 
-    Force_Distance = np.column_stack((filteredForce, filteredDistance * 1000))
-    Force_Distance_um = np.column_stack((filteredForce, filteredDistance))
+        for line in range(len(Force) - 1):
+            f = Force[line]
+            d = Distance[line]
+            new_f.append(f)
+            new_d.append(d)
+            f_next = Force[line + 1]
+            d_next = Distance[line + 1]
+            delta_f = abs(f_next - f)
+            delta_d = abs(d_next - d)
+
+            for point in range(1, factor):
+                mu = 0
+                sigma_f = (1.5 * delta_f) / 3
+                sigma_d = (1.5 * delta_d) / 3
+                nf = np.random.normal(mu, sigma_f)
+                nd = np.random.normal(mu, sigma_d)
+                new_point_f = f + ((point + nf) / factor) * delta_f
+                new_point_d = d + ((point + nd) / factor) * delta_d
+                new_f.append(new_point_f)
+                new_d.append(new_point_d)
+
+        Force = np.array(new_f)
+        Distance = np.array(new_d)
+
+    if input_format['preprocess'] == 1:
+        # Downsample
+        Force_ds = Force[::input_settings['downsample_value']]
+        Distance_ds = Distance[::input_settings['downsample_value']]
+
+        # Filter
+        b, a = signal.butter(input_settings['filter_degree'], input_settings['filter_cut_off'])
+        filteredForce = signal.filtfilt(b, a, Force_ds)
+        filteredDistance = signal.filtfilt(b, a, Distance_ds)
+
+        Force_Distance = np.column_stack((filteredForce, filteredDistance * 1000))
+        Force_Distance_um = np.column_stack((filteredForce, filteredDistance))
+
+    else:
+        Force_Distance = np.column_stack((Force, Distance * 1000))
+        Force_Distance_um = np.column_stack((Force, Distance))
 
     return Force_Distance, Force_Distance_um
 

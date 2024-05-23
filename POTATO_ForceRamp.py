@@ -4,6 +4,7 @@ import pandas as pd
 import h5py
 import numpy as np
 from pathlib import Path
+import lumicks.pylake as lk
 
 # relative imports
 from POTATO_fitting import fitting_ds, fitting_ss, plot_fit
@@ -13,6 +14,12 @@ from POTATO_processMultiH5 import split_H5
 
 
 """define the functions of the subprocess processing the data"""
+
+
+def show_h5_structure(file_path):
+    file_h5 = lk.File(file_path)
+
+    return file_h5
 
 
 def read_in_data(file_num, Files, input_settings, input_format):
@@ -27,12 +34,8 @@ def read_in_data(file_num, Files, input_settings, input_format):
         else:
             Distance = df.to_numpy()[:, 1] / 1000
         # accessing the data frequency from user input
-        Frequency_value = input_settings['data_frequency']
-        if input_format['preprocess'] == 1:
-            Force_Distance, Force_Distance_um = preprocess_RAW(Force, Distance, input_settings)
-        else:
-            Force_Distance = np.column_stack((Force, Distance * 1000))
-            Force_Distance_um = np.column_stack((Force, Distance))
+        Frequency_value = input_settings['data_frequency']  
+        Force_Distance, Force_Distance_um = preprocess_RAW(Force, Distance, input_settings, input_format)
 
     else:
         with h5py.File(Files[file_num], "r") as f:
@@ -48,11 +51,7 @@ def read_in_data(file_num, Files, input_settings, input_format):
                 Distance = f.get("Distance/Piezo Distance")
                 # accessing the data frequency from the h5 file
                 Frequency_value = Force.attrs['Sample rate (Hz)']
-                if input_format['preprocess'] == 1:
-                    Force_Distance, Force_Distance_um = preprocess_RAW(Force, Distance, input_settings)
-                else:
-                    Force_Distance = np.column_stack((Force, Distance * 1000))
-                    Force_Distance_um = np.column_stack((Force, Distance))
+                Force_Distance, Force_Distance_um = preprocess_RAW(Force, Distance, input_settings, input_format)
 
             elif input_format['LF'] == 1:
                 if input_format['Trap'] == 1:
@@ -71,11 +70,9 @@ def read_in_data(file_num, Files, input_settings, input_format):
                     except:
                         load_distance = f.get("Distance/Distance 1")[:]
                     Distance = load_distance['Value'][:]
-                if input_format['preprocess'] == 1:
-                    Force_Distance, Force_Distance_um = preprocess_RAW(Force, Distance, input_settings)
-                else:
-                    Force_Distance = np.column_stack((Force, Distance * 1000))
-                    Force_Distance_um = np.column_stack((Force, Distance))
+
+                Force_Distance, Force_Distance_um = preprocess_RAW(Force, Distance, input_settings, input_format)
+
                 # calculating the data frequency based on start- and end-time of the measurement
                 size_F_LF = len(Force)
                 stop_time_F_LF = load_force.attrs['Stop time (ns)']
@@ -186,9 +183,11 @@ def start_subprocess(analysis_folder, timestamp, Files, input_settings, input_fo
                     filename_i = filename + '_' + suffix
 
             Force_Distance = curves[x][:, :2]
+            print('################ FD', len(Force_Distance))
             Force_Distance_um = np.copy(Force_Distance)
             Force_Distance_um[:, 1] = Force_Distance_um[:, 1] / 1000
-        ###### Detect MultiFiles ######
+        ###### Detect MultiFiles end ######
+
             orientation = "forward"
             if Force_Distance[0, 1] > Force_Distance[-1, 1]:  # reverse
                 orientation = "reverse"
@@ -204,38 +203,38 @@ def start_subprocess(analysis_folder, timestamp, Files, input_settings, input_fo
 
             # trim data below specified force thresholds
             F_trimmed, PD_trimmed, F_low = trim_data(Force_Distance, input_settings['F_min'])
-
+            print('#################### Trimmmed', len(F_trimmed))
             if not F_trimmed.size == 0:
                 # create force and distance derivative of the pre-processed data to be able to identify steps
                 derivative_array = create_derivative(input_settings, Frequency_value, F_trimmed, PD_trimmed, F_low)
-
+                print('################### der array', len(derivative_array))
                 """find steps based on force derivative"""
                 filename_results = analysis_folder + "/" + filename_i + "_results_" + timestamp + ".csv"
 
-                try:
-                    results_F, PD_start_F = find_steps_F(
-                        input_settings,
-                        filename_i,
-                        Force_Distance,
-                        derivative_array,
-                        orientation
-                    )
+                # try:
+                results_F, PD_start_F = find_steps_F(
+                    input_settings,
+                    filename_i,
+                    Force_Distance,
+                    derivative_array,
+                    orientation
+                )
 
-                    results_F_list = list(results_F)
+                results_F_list = list(results_F)
 
-                    if export_data['export_STEPS'] == 1:
-                        steps_results_F = pd.DataFrame(results_F_list)
-                        with open(filename_results, 'a+') as f:
-                            f.write('\nSteps found by force derivative:\n')
-                        steps_results_F.to_csv(filename_results, mode='a', index=False, header=True)
-                    else:
-                        pass
-
-                except:
-                    results_F = []
-                    PD_start_F = []
-                    print("Error in finding steps for file " + str(filename_i) + '\n' 'There was an error in finding Force steps')
+                if export_data['export_STEPS'] == 1:
+                    steps_results_F = pd.DataFrame(results_F_list)
+                    with open(filename_results, 'a+') as f:
+                        f.write('\nSteps found by force derivative:\n')
+                    steps_results_F.to_csv(filename_results, mode='a', index=False, header=True)
+                else:
                     pass
+
+                # except:
+                #     results_F = []
+                #     PD_start_F = []
+                #     print("Error in finding steps for file " + str(filename_i) + '\n' 'There was an error in finding Force steps')
+                #     pass
 
                 """find steps based on distance derivative"""
 
@@ -302,11 +301,11 @@ def start_subprocess(analysis_folder, timestamp, Files, input_settings, input_fo
                     common_steps_results.to_csv(filename_results, mode='a', index=False, header=True)
 
                     # put common steps into a total_results dataframe so all steps from all files of the analysed folder can be exported together
-                    total_results_steps = total_results_steps.append(common_steps_results, ignore_index=True, sort=False)
+                    total_results_steps = pd.concat([total_results_steps, common_steps_results], ignore_index=True, sort=False)
 
                 else:
-                    common_steps_results = [{'filename': filename_i, 'orientation': orientation, 'Derivative of': '', 'step #': 0, 'F1': '', 'F2': '', 'Fc': '', 'step start': '', 'step end': '', 'step length': ''}]
-                    total_results_steps = total_results_steps.append(common_steps_results, ignore_index=True, sort=False)
+                    common_steps_results = pd.DataFrame({'filename': filename_i, 'orientation': orientation, 'Derivative of': '', 'step #': 0, 'F1': '', 'F2': '', 'Fc': '', 'step start': '', 'step end': '', 'step length': ''}, index=[0])
+                    total_results_steps = pd.concat([total_results_steps, common_steps_results], ignore_index=True, sort=False)
 
                 '''if common steps were found, try to fit FD-Curve'''
                 empty = {
@@ -364,7 +363,8 @@ def start_subprocess(analysis_folder, timestamp, Files, input_settings, input_fo
                                             1,
                                             derivative_array,
                                             F_low,
-                                            0
+                                            0,
+                                            n
                                         )
 
                                         fit.append(fit_ss)
@@ -392,7 +392,8 @@ def start_subprocess(analysis_folder, timestamp, Files, input_settings, input_fo
                                     1,
                                     derivative_array,
                                     F_low,
-                                    0
+                                    0,
+                                    len(common_steps)
                                 )
 
                                 fit.append(fit_ss)

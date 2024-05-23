@@ -40,6 +40,30 @@ def moving_median(input_data, column_number, window_size):
 
 
 # sorting the data based on a x times STD threshold (normal distibuted noise vs extreme values from steps)
+# try to simplify this function
+# def cut_off(input_array, column_number, mm, std, z_score):
+#     # convert mm to a numpy array
+#     mm = np.array(mm)
+
+#     # calculate the upper and lower bounds
+#     upper_bound = mm + z_score * std
+#     lower_bound = mm - z_score * std
+
+#     # create masks for the above, below, and inside regions
+#     above_mask = input_array[:, column_number] > upper_bound
+#     below_mask = input_array[:, column_number] < lower_bound
+#     inside_mask = ~(above_mask | below_mask)
+
+#     # use the masks to select the corresponding rows from input_array
+#     Above = input_array[above_mask]
+#     Below = input_array[below_mask]
+#     Inside = input_array[inside_mask]
+
+#     inside_indices = np.where(inside_mask)[0]
+
+#     return Above, Inside, Below, inside_indices
+
+
 def cut_off(input_array, column_number, mm, std, z_score):
     # sort values - inside STD region, above STD region and below STD region
     F_values_inside = []
@@ -201,6 +225,7 @@ def find_steps_PD(input_settings, filename_i, Force_Distance, der_arr, orientati
         Above, Inside, Below, inside_indices_PD = cut_off(der_arr, 3, PD_mm, STD_1, input_settings['z-score_d'])
         n_runs = n_runs + 1
 
+
     if STD_1 < 0.05:
         STD_1 = 0.05
 
@@ -222,6 +247,7 @@ def find_steps_PD(input_settings, filename_i, Force_Distance, der_arr, orientati
     for i in range(len(PD_mm)):
         PD_mm2_STD2_positive.append(PD_mm[i] + input_settings['z-score_d'] * STD_1)
         PD_mm2_STD2_negative.append(PD_mm[i] - input_settings['z-score_d'] * STD_1)
+
     # find the step points
     # for those steps that cross the 3*STD2 threshold -> find the closest 0 values prior/following to the crossing one
 

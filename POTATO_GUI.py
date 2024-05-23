@@ -15,7 +15,6 @@ import tkinter as tk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
-from tkinter import filedialog
 from tkinter import ttk
 from PIL import ImageTk, Image
 import pandas as pd
@@ -27,8 +26,8 @@ import multiprocessing as mp
 import json
 
 # relative imports
-from POTATO_ForceRamp import start_subprocess, read_in_data
-from POTATO_preprocessing import preprocess_RAW, create_derivative
+from POTATO_ForceRamp import start_subprocess, read_in_data, show_h5_structure
+from POTATO_preprocessing import create_derivative
 from POTATO_config import default_values_HF, default_values_LF, default_values_CSV, default_values_FIT, default_values_constantF
 from POTATO_constantF import get_constantF, display_constantF, fit_constantF
 from POTATO_fitting import fitting_ds, fitting_ss
@@ -53,7 +52,7 @@ def start_analysis():
     input_settings, input_format, export_data, input_fitting, input_constantF = check_settings()
 
     # ask wich directory should be analysed
-    folder = filedialog.askdirectory()
+    folder = tk.filedialog.askdirectory()
     root.title('POTATO -- ' + str(folder))
 
     # decide which input format was choosen
@@ -113,6 +112,7 @@ def parameters(default_values, default_fit, default_constantF):
         Force_Min.set(default_values['Force threshold, pN'])
         Z_score_force.set(default_values['Z-score force'])
         Z_score_distance.set(default_values['Z-score distance'])
+        augment_factor_value.set(2)
 
         step_d_variable.set(str(default_values['Step d']))
         window_size_variable.set(str(default_values['Moving median window size']))
@@ -169,13 +169,15 @@ def check_settings():
         'z-score_d': float(Z_score_distance2.get()),
         'window_size': int(window_size_value.get()),
         'data_frequency': float(Frequency_value.get()),
-        'STD_diff': float(STD_difference_value.get())
+        'STD_diff': float(STD_difference_value.get()),
+        'augment_factor': augment_factor_value.get()
     }
 
     input_format = {
         'HF': check_box_HF.get(),
         'LF': check_box_LF.get(),
         'CSV': check_box_CSV.get(),
+        'Augment': check_box_augment.get(),
         'Trap': check_box_Trap1.get(),
         'length_measure': check_box_um.get(),
         'MultiH5': check_box_multiH5.get(),
@@ -277,12 +279,26 @@ def get_single_file(format):
             pass
 
     input_settings, input_format, export_data, input_fitting, input_constantF = check_settings()
-    import_file_path = filedialog.askopenfilename()
+    import_file_path = tk.filedialog.askopenfilename()
     input_format['preprocess'] = 0
     FD_raw, FD_raw_um, Frequency_value, filename = read_in_data(0, [import_file_path], input_settings, input_format)
     input_format['preprocess'] = 1
     FD, FD_um, Frequency_value, filename = read_in_data(0, [import_file_path], input_settings, input_format)
     display_RAW_FD(FD[:, 0], FD[:, 1], FD_raw[:, 0], FD_raw[:, 1], filename)
+
+
+def show_h5():
+    import_file_path = tk.filedialog.askopenfilename()
+    h5_structure = show_h5_structure(import_file_path)
+    h5_structure_window = tk.Toplevel(root)
+    h5_structure_window.title("H5 structure")
+
+    text = tk.Text(h5_structure_window, height=50, width=200)
+    scroll_bar = tk.Scrollbar(h5_structure_window, command=text.yview)
+    scroll_bar.pack(side=tk.RIGHT, fill=tk.Y)
+    text['yscrollcommand'] = scroll_bar.set
+    text.pack(side=tk.LEFT, fill=tk.Y)
+    text.insert("end", h5_structure)
 
 
 # create the plot for tab2
@@ -305,7 +321,7 @@ def display_RAW_FD(processed_F, processed_D, raw_F, raw_D, filename):
     subplot1.set_title(str(filename))
     subplot1.set_xlabel("Distance (nm)")
     subplot1.set_ylabel("Force (pN)")
-    subplot1.plot(raw_D, raw_F, alpha=0.8, color='C0', zorder=0)
+    subplot1.scatter(raw_D, raw_F, alpha=0.8, color='C0', s=0.1, zorder=0)
     subplot1.scatter(processed_D, processed_F, marker='.', s=0.1, linewidths=None, alpha=1, color='C1', zorder=1)
     subplot1.legend(legend_elements, ['Downsampled FD-Data', 'Filtered FD-Data'])
 
@@ -360,7 +376,7 @@ def open_folder():
     input_settings, input_format, export_data, input_fitting, input_constantF = check_settings()
 
     # ask wich directory should be analysed
-    folder = filedialog.askdirectory()
+    folder = tk.filedialog.askdirectory()
     root.title('POTATO -- ' + str(folder))
 
     # decide which input format was choosen
@@ -774,7 +790,7 @@ def export_table():
         'Work [kT]'
         ])
 
-    name = filedialog.asksaveasfile(mode='w', defaultextension=".csv")
+    name = tk.filedialog.asksaveasfile(mode='w', defaultextension=".csv")
     Fit_results.to_csv(name.name, index=False, header=True)
 
 
@@ -818,6 +834,7 @@ if __name__ == '__main__':
     file_menu.add_command(label='Analyse folder (FD curves)', command=start_analysis)
     file_menu.add_command(label='Display single FD curve (h5)', command=lambda: get_single_file('h5'))
     file_menu.add_command(label='Display single FD curve (csv)', command=lambda: get_single_file('csv'))
+    file_menu.add_command(label='Show h5 file structure', command=lambda: show_h5())
     file_menu.add_separator()
     file_menu.add_command(label='Display constant force', command=show_constantF)
     file_menu.add_command(label='Fit constant force', command=start_constantF)
@@ -896,6 +913,7 @@ if __name__ == '__main__':
     check_box_HF = tk.IntVar(value=1)
     check_box_LF = tk.IntVar()
     check_box_CSV = tk.IntVar()
+    check_box_augment = tk.IntVar()
     check_box_Trap1 = tk.IntVar()
     check_box_Trap2 = tk.IntVar(value=1)
     check_box_um = tk.IntVar(value=1)
@@ -923,6 +941,13 @@ if __name__ == '__main__':
         variable=check_box_CSV,
         command=lambda: [select_box(check_box_CSV, check_box_HF, check_box_LF), parameters(default_values_CSV, default_values_FIT, default_values_constantF)]
     ).grid(row=2, column=0, sticky='W')
+
+    check_augment = tk.Checkbutton(
+        check_box,
+        text="Data Augmentation",
+        variable=check_box_augment,
+        command=lambda: show_augment()
+    ).grid(row=3, column=0, sticky='W')
 
     check_Trap1 = tk.Checkbutton(
         check_box,
@@ -978,6 +1003,36 @@ if __name__ == '__main__':
     Label_Zscore_F = tk.Label(parameter_frame, text='Z-score force')
     Label_Zscore_D = tk.Label(parameter_frame, text='Z-score distance')
 
+
+    Cluster_augment = tk.Label(parameter_frame, text='AUGMENTATION', font='Helvetica 9 bold')
+    Label_augment_factor = tk.Label(parameter_frame, text='Augmentation factor')
+    augment_factor_value = tk.StringVar()
+    augment_factor_entry = tk.Entry(parameter_frame, textvariable=augment_factor_value)
+
+
+    def show_augment():
+        global Cluster_augment
+        global Label_augment_factor
+        global augment_factor_value
+        global augment_factor_entry
+
+        if check_box_augment.get() == 1:
+            augment_factor_value.set(2)
+            Cluster_augment.grid(row=8, column=0, padx=2, pady=(20, 2))
+            Label_augment_factor.grid(row=9, column=0, sticky=tk.E + tk.W, padx=2, pady=2)
+            augment_factor_entry.grid(row=9, column=1, padx=2, pady=2)
+
+        elif check_box_augment.get() == 0 and Cluster_augment and Label_augment_factor and augment_factor_entry:
+            Cluster_augment.destroy()
+            Label_augment_factor.destroy()
+            augment_factor_entry.destroy()
+            Cluster_augment = tk.Label(parameter_frame, text='AUGMENTATION', font='Helvetica 9 bold')
+            Label_augment_factor = tk.Label(parameter_frame, text='Augmentation factor')
+            augment_factor_value = tk.StringVar()
+            augment_factor_entry = tk.Entry(parameter_frame, textvariable=augment_factor_value)
+
+
+
     downsample_value = tk.StringVar()
     downsample_value1 = tk.Entry(parameter_frame, textvariable=downsample_value)
 
@@ -1027,7 +1082,7 @@ if __name__ == '__main__':
         width=20
     )
 
-    BUTTON1.grid(row=9, column=0, columnspan=2, pady=125)
+    BUTTON1.grid(row=11, column=0, columnspan=2, pady=125)
 
     """organize tab2"""
     figure_frame2 = tk.Canvas(tab2, height=650, width=650, borderwidth=1, relief='ridge')
