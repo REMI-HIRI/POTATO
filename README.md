@@ -32,6 +32,7 @@ To avoid issues with different python package versions, or to avoid setting up a
 For more detailed description please refer to: 
 https://doi.org/10.1016/j.bpj.2022.06.030
 
+For the most updated version, see our new repository [FRIED POTATO](https://github.com/lpekarek/FRIED_POTATO)
 
 ***Dependencies***
 
